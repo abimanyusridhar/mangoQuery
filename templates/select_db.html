@@ -73,6 +73,13 @@
             margin-right: 10px;
         }
 
+        .error-message {
+            color: red;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+        }
+
         button {
             width: 100%;
             padding: 12px;
@@ -161,6 +168,7 @@
             <label>Host: <input type="text" name="host" placeholder="e.g., localhost" id="host" disabled></label>
             <label>Port: <input type="number" name="port" placeholder="e.g., 27017" id="port" disabled min="1" max="65535"></label>
             <label>Database Name: <input type="text" name="database" placeholder="e.g., my_database" id="database" disabled></label>
+            <div class="error-message" id="mongodbError">Please fill out all MongoDB fields.</div>
         </div>
 
         <hr>
@@ -172,6 +180,7 @@
                 <strong>Upload JSON or JS File</strong>
             </label>
             <label>Choose File: <input type="file" name="db_file" accept=".json, .js" id="db_file" disabled></label>
+            <div class="error-message" id="jsonError">Please upload a valid JSON or JS file.</div>
         </div>
 
         <button type="submit">Connect</button>
@@ -182,13 +191,14 @@
     </div>
 
     <script>
-        // JavaScript for dynamic form enabling/disabling
         const mongodbRadio = document.getElementById('mongodb');
         const jsonOrJsRadio = document.getElementById('json_or_js');
         const hostInput = document.getElementById('host');
         const portInput = document.getElementById('port');
         const databaseInput = document.getElementById('database');
         const dbFileInput = document.getElementById('db_file');
+        const mongodbError = document.getElementById('mongodbError');
+        const jsonError = document.getElementById('jsonError');
 
         function toggleInputs() {
             if (mongodbRadio.checked) {
@@ -196,36 +206,38 @@
                 portInput.disabled = false;
                 databaseInput.disabled = false;
                 dbFileInput.disabled = true;
+                mongodbError.style.display = 'none';
+                jsonError.style.display = 'none';
             } else if (jsonOrJsRadio.checked) {
                 hostInput.disabled = true;
                 portInput.disabled = true;
                 databaseInput.disabled = true;
                 dbFileInput.disabled = false;
+                mongodbError.style.display = 'none';
+                jsonError.style.display = 'none';
             }
         }
 
         mongodbRadio.addEventListener('change', toggleInputs);
         jsonOrJsRadio.addEventListener('change', toggleInputs);
 
-        document.getElementById('dbForm').addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const formData = new FormData(event.target);
+        document.getElementById('dbForm').addEventListener('submit', (event) => {
+            let valid = true;
 
-            try {
-                const response = await fetch('/select_db', {
-                    method: 'POST',
-                    body: formData,
-                });
-
-                if (response.ok) {
-                    alert("Database connected successfully!");
-                    window.location.href = "/schema"; // Redirect to schema page
-                } else {
-                    const error = await response.json();
-                    alert(`Error: ${error.message || "Failed to connect to database."}`);
+            if (mongodbRadio.checked) {
+                if (!hostInput.value || !portInput.value || !databaseInput.value) {
+                    mongodbError.style.display = 'block';
+                    valid = false;
                 }
-            } catch (err) {
-                alert(`An unexpected error occurred: ${err.message}`);
+            } else if (jsonOrJsRadio.checked) {
+                if (!dbFileInput.files.length) {
+                    jsonError.style.display = 'block';
+                    valid = false;
+                }
+            }
+
+            if (!valid) {
+                event.preventDefault();
             }
         });
     </script>

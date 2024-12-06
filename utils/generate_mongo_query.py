@@ -9,7 +9,12 @@ from utils.db_connection import get_connection
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # Load pre-trained NLP model
-nlp_model = pipeline("text2text-generation", model="t5-large")
+try:
+    nlp_model = pipeline("text2text-generation", model="t5-large")
+    logging.info("NLP model loaded successfully.")
+except Exception as e:
+    logging.error(f"Failed to load NLP model: {e}")
+    raise RuntimeError("Error loading NLP model.")
 
 # Regex patterns for natural language query recognition
 RE_PATTERNS = {
@@ -32,6 +37,7 @@ def extract_schema() -> Dict[str, Any]:
     """Extract schema from MongoDB."""
     global _cached_schema
     if _cached_schema:
+        logging.info("Using cached schema.")
         return _cached_schema
 
     client = get_connection()
@@ -52,7 +58,7 @@ def extract_schema() -> Dict[str, Any]:
         return schema
     except Exception as e:
         logging.error(f"Error extracting schema: {e}")
-        raise RuntimeError("Error while extracting schema.")
+        raise RuntimeError("Error while extracting schema.") from e
 
 
 def build_filter(query_type: str, field: str, value: str) -> Dict[str, Any]:
@@ -92,13 +98,14 @@ def generate_query_from_pattern(nl_query: str, schema: Dict[str, Any]) -> Option
 
 def generate_query_with_nlp(nl_query: str, schema: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Generate query using the NLP model."""
-    prompt = f"Schema:\n{json.dumps(schema, indent=2)}\n\nQuery: {nl_query}\n\nMongoDB Query:"
     try:
+        schema_json = json.dumps(schema, indent=2) if schema else "No schema available."
+        prompt = f"Schema:\n{schema_json}\n\nQuery: {nl_query}\n\nMongoDB Query:"
         result = nlp_model(prompt, max_length=200, num_return_sequences=1)
         return json.loads(result[0]["generated_text"])
     except Exception as e:
         logging.error(f"NLP query generation failed: {e}")
-        raise RuntimeError("NLP query generation failed.")
+        raise RuntimeError("NLP query generation failed.") from e
 
 
 def generate_mongo_query(nl_query: str) -> Optional[Dict[str, Any]]:
@@ -109,10 +116,10 @@ def generate_mongo_query(nl_query: str) -> Optional[Dict[str, Any]]:
         if query:
             logging.info("Query generated using regex patterns.")
             return query
-        logging.info("Falling back to NLP model.")
+        logging.info("Falling back to NLP model for query generation.")
         return generate_query_with_nlp(nl_query, schema)
     except Exception as e:
-        logging.error(f"Error: {e}")
+        logging.error(f"Error generating query: {e}")
         return None
 
 

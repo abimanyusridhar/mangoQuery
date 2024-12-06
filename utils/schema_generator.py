@@ -8,16 +8,29 @@ client = None  # Global MongoDB client object
 
 
 def connect_to_db(db_details: dict):
+    """
+    Connect to a MongoDB instance.
+
+    Parameters:
+    db_details (dict): MongoDB connection details with:
+        - type: 'mongodb'
+        - host: MongoDB host (default 'localhost')
+        - port: MongoDB port (default 27017)
+        - database: Database name to connect to
+
+    Returns:
+    Database object if successful, None otherwise.
+    """
     global client
     try:
         if db_details.get("type") != "mongodb":
-            raise ValueError("Only MongoDB is supported.")
+            raise ValueError("Unsupported database type. Only MongoDB is supported.")
 
         host = db_details.get("host", "localhost")
         port = db_details.get("port", 27017)
         client = MongoClient(host=host, port=port)
 
-        # Ping the MongoDB server to ensure it's accessible
+        # Ping the MongoDB server
         client.admin.command("ping")
         print(f"Connected to MongoDB server at {host}:{port}")
 
@@ -29,15 +42,22 @@ def connect_to_db(db_details: dict):
         print(f"Connected to MongoDB database '{db_name}' successfully.")
         return db
     except Exception as e:
-        print(f"Connection failed: {e}")
+        print(f"Error: Unable to connect to database. Details: {e}")
         return None
 
 
 def process_external_file(file_path: str, db):
+    """
+    Process an external MongoDB data file and load its content into the database.
+
+    Parameters:
+    file_path (str): Path to the .js or .json file.
+    db (Database): The MongoDB database object to load data into.
+
+    """
     try:
         with open(file_path, "r", encoding="utf-8") as file:
-            file_content = file.read()
-            file_content = file_content.replace("db.", "").replace(");", "").strip()
+            file_content = file.read().replace("db.", "").strip()
             collections = [
                 line.strip() for line in file_content.split(";") if line.strip()
             ]
@@ -52,16 +72,23 @@ def process_external_file(file_path: str, db):
                     collection.insert_many(
                         json_data if isinstance(json_data, list) else [json_data]
                     )
-                    print(
-                        f"Data from '{file_path}' successfully imported into '{collection_name}' collection."
-                    )
+                    print(f"Data from '{file_path}' imported into '{collection_name}'.")
     except json.JSONDecodeError as e:
-        print(f"Failed to parse JSON in the external file: {e}")
+        print(f"JSON Parsing Error: {e}")
     except Exception as e:
-        print(f"Failed to process external file: {e}")
+        print(f"Error processing external file: {e}")
 
 
 def generate_schema(db):
+    """
+    Generate a schema for the MongoDB database.
+
+    Parameters:
+    db (Database): The MongoDB database object.
+
+    Returns:
+    dict: A schema containing collection names, fields, and sample data.
+    """
     try:
         schema = {}
         for collection_name in db.list_collection_names():
@@ -79,6 +106,17 @@ def generate_schema(db):
 
 
 def get_schema_details(schema: dict):
+    """
+    Extract detailed schema information, including inferred relationships.
+
+    Parameters:
+    schema (dict): The generated schema.
+
+    Returns:
+    tuple: 
+        - collections (dict): Collection details with fields and data types.
+        - relationships (dict): Inferred relationships between collections.
+    """
     collections = {}
     relationships = defaultdict(list)
     try:
@@ -88,6 +126,7 @@ def get_schema_details(schema: dict):
             field_types = {field: type(value).__name__ for field, value in sample.items()}
             collections[collection_name] = {"fields": fields, "field_types": field_types}
 
+            # Identify relationships (basic reference detection)
             for field, value in sample.items():
                 if isinstance(value, dict) and "$ref" in value and "$id" in value:
                     ref_collection = value.get("$ref")
@@ -106,8 +145,16 @@ def get_schema_details(schema: dict):
 
 
 def visualize_schema(schema: dict, relationships: dict):
+    """
+    Visualize the MongoDB schema and relationships using PyVis.
+
+    Parameters:
+    schema (dict): Collection details with fields and types.
+    relationships (dict): Inferred relationships between collections.
+    """
     net = Network(height="750px", width="100%", directed=True)
     try:
+        # Add nodes for collections and fields
         for collection, details in schema.items():
             net.add_node(
                 collection, label=collection, shape="ellipse", color="#76c7c0"
@@ -122,6 +169,7 @@ def visualize_schema(schema: dict, relationships: dict):
                 )
                 net.add_edge(collection, field_node, color="#3498db")
 
+        # Add edges for relationships
         for ref_collection, refs in relationships.items():
             for ref in refs:
                 net.add_edge(
@@ -138,7 +186,7 @@ def visualize_schema(schema: dict, relationships: dict):
         print(f"Error visualizing schema: {e}")
 
 
-# Main Flow
+# Main Execution Flow
 if __name__ == "__main__":
     db_details = {
         "type": "mongodb",
@@ -152,3 +200,7 @@ if __name__ == "__main__":
         if schema:
             collections, relationships = get_schema_details(schema)
             visualize_schema(collections, relationships)
+        else:
+            print("Failed to generate schema.")
+    else:
+        print("Failed to connect to the database.")

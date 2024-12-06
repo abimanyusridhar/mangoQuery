@@ -130,7 +130,7 @@
 
     <div class="container" role="form">
         <h1>Enter Your Natural Language Query</h1>
-        <form id="queryForm">
+        <form id="queryForm" aria-label="Natural Language Query Input Form">
             <input 
                 type="text" 
                 id="nlpQuery" 
@@ -143,7 +143,7 @@
         <div id="loadingSpinner" class="loading-spinner" aria-hidden="true"></div>
         <div id="errorMessage" class="message error-message" aria-live="polite"></div>
         <div id="successMessage" class="message success-message" aria-live="polite"></div>
-        <div id="generatedQuery" class="generated-query"></div>
+        <div id="generatedQuery" class="generated-query" aria-labelledby="successMessage"></div>
     </div>
 
     <script>
@@ -157,21 +157,17 @@
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
 
-            // Reset messages
             resetMessages();
             const query = nlpQuery.value.trim();
 
-            // Input validation
             if (!validateQuery(query)) {
                 displayMessage(errorMessage, "Please enter a valid query with at least 5 characters.");
                 return;
             }
 
-            // Show loading spinner
             loadingSpinner.style.display = 'block';
 
             try {
-                // Send query to the server
                 const response = await fetch('/generate_query', {
                     method: 'POST',
                     headers: {

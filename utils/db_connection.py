@@ -22,12 +22,14 @@ def connect_to_db(db_details):
     global client
     try:
         db_type = db_details.get('type')
+
         if db_type == 'mongodb':
             return connect_to_mongodb(db_details)
         elif db_type == 'json':
             return process_json_file(db_details.get('file_path'))
         else:
             raise ValueError("Unsupported database type. Please choose either 'mongodb' or 'json'.")
+
     except ValueError as e:
         print(f"Error: {e}")
         return False
@@ -54,16 +56,18 @@ def connect_to_mongodb(db_details):
         if not database:
             raise ValueError("Database name is required for MongoDB connection.")
 
+        # Establish connection to MongoDB
         client = MongoClient(host=host, port=port)
-        client.admin.command('ping')  # Ensure connection is active
+        client.admin.command('ping')  # Test connection
         print(f"Connected to MongoDB server at {host}:{port}")
         print(f"Database '{database}' connection successful.")
         return True
+
     except ValueError as e:
         print(f"MongoDB Connection Error: {e}")
         return False
     except Exception as e:
-        print(f"MongoDB Connection Unexpected Error: {e}")
+        print(f"Unexpected MongoDB Connection Error: {e}")
         return False
 
 def process_json_file(file_path):
@@ -87,11 +91,12 @@ def process_json_file(file_path):
 
             for collection_name, collection_data in data.items():
                 print(f"Loading collection '{collection_name}' with {len(collection_data)} documents.")
-                # Optional: Insert data into a real MongoDB instance
+                # Mock insertion or optional real MongoDB insertion
                 # Example: client['mock_db'][collection_name].insert_many(collection_data)
 
             print(f"Data from '{file_path}' successfully loaded.")
             return True
+
     except json.JSONDecodeError as e:
         print(f"JSON Parsing Error: {e}")
         return False
