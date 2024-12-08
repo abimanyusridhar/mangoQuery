@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DataSpeak: Model-Based Schema Viewer</title>
+    <title>DataSpeak: Enhanced Schema Viewer</title>
     <style>
         /* General Reset */
         * {
@@ -40,6 +40,31 @@
             font-size: 2.5rem;
             font-weight: 700;
             text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Floating Scroll-To-Top Button */
+        .scroll-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #3a6ea5;
+            color: #ffffff;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            font-size: 20px;
+            transition: background 0.3s ease, transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .scroll-to-top:hover {
+            background: #2a4d70;
+            transform: translateY(-4px);
         }
 
         /* Main Container */
@@ -87,11 +112,32 @@
             max-width: 350px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
         }
 
         .table-card:hover, .model-card:hover {
             transform: translateY(-8px);
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .tooltip {
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: #fff;
+            padding: 5px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .table-card:hover .tooltip, .model-card:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
         }
 
         .table-card h3, .model-card h3 {
@@ -118,24 +164,6 @@
         ul li em {
             color: #0056b3;
             font-style: normal;
-        }
-
-        /* Buttons */
-        .btn-primary {
-            display: inline-block;
-            background: #3a6ea5;
-            color: #ffffff;
-            padding: 0.8rem 1.5rem;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: bold;
-            margin-top: 1rem;
-            transition: background 0.3s ease, transform 0.3s ease;
-        }
-
-        .btn-primary:hover {
-            background: #2a4d70;
-            transform: translateY(-2px);
         }
 
         /* Footer */
@@ -200,13 +228,13 @@
 <body>
     <!-- Header Section -->
     <header class="header">
-        <h1>DataSpeak: Model-Based Schema Viewer</h1>
+        <h1>DataSpeak: Enhanced Schema Viewer</h1>
     </header>
 
     <!-- Main Content -->
     <main class="container">
         <!-- Schema View Section -->
-        <section class="schema-view">
+        <section class="schema-view" aria-live="polite">
             <h2>Generated Database Schema</h2>
             {% if collections %}
             <div class="schema-list">
@@ -215,12 +243,11 @@
                     <h3>Collection: {{ collection }}</h3>
                     <ul>
                         <li><strong>Fields:</strong> {{ details.fields | join(', ') }}</li>
-                        <li><strong>Field Types:</strong>
-                            {% for field, field_type in details.field_types.items() %}
-                            <br><strong>{{ field }}:</strong> <em>{{ field_type }}</em>
-                            {% endfor %}
-                        </li>
+                        {% for field, field_type in details.field_types.items() %}
+                        <li><strong>{{ field }}:</strong> <em>{{ field_type }}</em></li>
+                        {% endfor %}
                     </ul>
+                    <div class="tooltip">Click for details</div>
                 </div>
                 {% endfor %}
             </div>
@@ -230,7 +257,7 @@
         </section>
 
         <!-- Model View Section -->
-        <section class="model-view">
+        <section class="model-view" aria-live="polite">
             <h2>Model Relationships</h2>
             {% if relationships %}
             <div class="model-list">
@@ -251,14 +278,18 @@
         </section>
 
         <!-- Navigation Buttons -->
-        <a href="/" class="btn-primary">Back to Home</a>
-        <a href="{{ url_for('nlp_query') }}" class="btn-primary">Run NLP Query</a>
-        <button onclick="scrollToTop()" class="btn-primary">Scroll to Top</button>
+        <div>
+            <a href="/" class="btn-primary">Back to Home</a>
+            <a href="{{ url_for('nlp_query') }}" class="btn-primary">Run NLP Query</a>
+        </div>
     </main>
+
+    <!-- Scroll-to-Top Button -->
+    <div class="scroll-to-top" onclick="scrollToTop()">▲</div>
 
     <!-- Footer -->
     <footer class="footer">
-        <p>© 2024 DataSpeak | Model-Based Schema Viewer</p>
+        <p>© 2024 DataSpeak | Enhanced Schema Viewer</p>
     </footer>
 </body>
 </html>

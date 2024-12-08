@@ -1,0 +1,40 @@
+{
+    "users": [
+        {
+            "_id": {"$oid": "64d2f66a2a12f8b5f22f6b9e"},
+            "name": "John Doe",
+            "email": "john.doe@example.com",
+            "age": 30,
+            "address": "123 Elm Street",
+            "is_active": true
+        },
+        {
+            "_id": {"$oid": "64d2f66a2a12f8b5f22f6b9f"},
+            "name": "Jane Smith",
+            "email": "jane.smith@example.com",
+            "age": 28,
+            "address": "456 Oak Street",
+            "is_active": false
+        }
+    ],
+    "orders": [
+        {
+            "_id": {"$oid": "64d2f66a2a12f8b5f22f6ba0"},
+            "user_id": {"$ref": "users", "$id": {"$oid": "64d2f66a2a12f8b5f22f6b9e"}},
+            "product": "Laptop",
+            "price": 1200.50,
+            "quantity": 1,
+            "status": "shipped",
+            "date": "2024-12-01T10:00:00Z"
+        },
+        {
+            "_id": {"$oid": "64d2f66a2a12f8b5f22f6ba1"},
+            "user_id": {"$ref": "users", "$id": {"$oid": "64d2f66a2a12f8b5f22f6b9f"}},
+            "product": "Headphones",
+            "price": 150.99,
+            "quantity": 2,
+            "status": "delivered",
+            "date": "2024-12-03T15:30:00Z"
+        }
+    ]
+}

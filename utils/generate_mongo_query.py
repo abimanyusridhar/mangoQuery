@@ -27,6 +27,8 @@ RE_PATTERNS = {
     "field_in_list": re.compile(r"(find|show|get) all (\w+) where (\w+) (is|are)? in \[(.*?)\]", re.IGNORECASE),
     "starts_with": re.compile(r"(find|show|get) all (\w+) where (\w+) starts with (\w+)", re.IGNORECASE),
     "ends_with": re.compile(r"(find|show|get) all (\w+) where (\w+) ends with (\w+)", re.IGNORECASE),
+    "is_null": re.compile(r"(find|show|get) all (\w+) where (\w+) (is null)", re.IGNORECASE),
+    "is_not_null": re.compile(r"(find|show|get) all (\w+) where (\w+) (is not null)", re.IGNORECASE),
 }
 
 # Cached schema
@@ -75,6 +77,8 @@ def build_filter(query_type: str, field: str, value: str) -> Dict[str, Any]:
         "field_in_list": lambda v: {field: {"$in": [i.strip() for i in v.split(",")]}},
         "starts_with": lambda v: {field: {"$regex": f"^{v}", "$options": "i"}},
         "ends_with": lambda v: {field: {"$regex": f"{v}$", "$options": "i"}},
+        "is_null": lambda _: {field: {"$exists": False}},
+        "is_not_null": lambda _: {field: {"$exists": True}},
     }
     if query_type not in filter_map:
         raise ValueError(f"Unsupported query type: {query_type}")
@@ -91,7 +95,7 @@ def generate_query_from_pattern(nl_query: str, schema: Dict[str, Any]) -> Option
                 raise ValueError(f"Collection '{collection}' not found in schema.")
             if field not in schema[collection]["fields"]:
                 raise ValueError(f"Field '{field}' not found in collection '{collection}'.")
-            value = match.group(5) if query_type != "field_in_list" else match.group(6)
+            value = match.group(5) if query_type not in ["field_in_list", "range_query"] else match.group(6)
             return {"collection": collection, "filter": build_filter(query_type, field, value)}
     return None
 

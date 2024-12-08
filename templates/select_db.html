@@ -20,22 +20,21 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             min-height: 100vh;
         }
 
         h2 {
-            margin-top: 20px;
+            margin-bottom: 20px;
             font-size: 1.8rem;
             text-align: center;
             color: #444;
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         form {
             background: #fff;
             max-width: 500px;
             width: 90%;
-            margin: 20px auto;
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
@@ -59,12 +58,9 @@
             border-radius: 5px;
             font-size: 1rem;
             background: #f9f9f9;
-            transition: border-color 0.3s ease;
         }
 
-        input[type="text"]:focus,
-        input[type="number"]:focus,
-        input[type="file"]:focus {
+        input:focus {
             border-color: #4caf50;
             outline: none;
         }
@@ -77,7 +73,15 @@
             color: red;
             font-size: 0.9rem;
             margin-top: 5px;
+            font-weight: bold;
             display: none;
+        }
+
+        .success-message {
+            color: green;
+            font-size: 1rem;
+            text-align: center;
+            margin-top: 10px;
         }
 
         button {
@@ -94,7 +98,12 @@
             transition: background-color 0.3s ease, transform 0.2s ease;
         }
 
-        button:hover {
+        button:disabled {
+            background-color: #bbb;
+            cursor: not-allowed;
+        }
+
+        button:hover:not(:disabled) {
             background-color: #45a049;
             transform: translateY(-3px);
         }
@@ -104,10 +113,6 @@
             height: 1px;
             background: #ddd;
             margin: 20px 0;
-        }
-
-        .db-options {
-            margin-bottom: 20px;
         }
 
         .footer {
@@ -137,53 +142,37 @@
                 transform: translateY(0);
             }
         }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            form {
-                width: 100%;
-                padding: 15px;
-            }
-
-            button {
-                font-size: 1rem;
-                padding: 10px;
-            }
-
-            h2 {
-                font-size: 1.5rem;
-            }
-        }
     </style>
 </head>
 <body>
     <h2>Select a Database</h2>
     <form id="dbForm" method="POST" enctype="multipart/form-data">
         <!-- MongoDB Configuration -->
-        <div class="db-options">
+        <div>
             <label>
                 <input type="radio" name="db_type" value="mongodb" id="mongodb" required>
-                <strong>Connect to MongoDB</strong>
+                Connect to MongoDB
             </label>
-            <label>Host: <input type="text" name="host" placeholder="e.g., localhost" id="host" disabled></label>
-            <label>Port: <input type="number" name="port" placeholder="e.g., 27017" id="port" disabled min="1" max="65535"></label>
-            <label>Database Name: <input type="text" name="database" placeholder="e.g., my_database" id="database" disabled></label>
+            <label for="host">Host: <input type="text" name="host" id="host" placeholder="e.g., localhost" disabled></label>
+            <label for="port">Port: <input type="number" name="port" id="port" placeholder="e.g., 27017" disabled></label>
+            <label for="database">Database Name: <input type="text" name="database" id="database" placeholder="e.g., my_database" disabled></label>
             <div class="error-message" id="mongodbError">Please fill out all MongoDB fields.</div>
         </div>
 
         <hr>
 
         <!-- JSON or JS File Upload -->
-        <div class="db-options">
+        <div>
             <label>
                 <input type="radio" name="db_type" value="json_or_js" id="json_or_js" required>
-                <strong>Upload JSON or JS File</strong>
+                Upload JSON or JS File
             </label>
-            <label>Choose File: <input type="file" name="db_file" accept=".json, .js" id="db_file" disabled></label>
+            <label for="db_file">Choose File: <input type="file" name="db_file" id="db_file" accept=".json, .js" disabled></label>
             <div class="error-message" id="jsonError">Please upload a valid JSON or JS file.</div>
         </div>
 
-        <button type="submit">Connect</button>
+        <button type="submit" id="submitButton">Connect</button>
+        <div class="success-message" id="successMessage"></div>
     </form>
 
     <div class="footer">
@@ -191,6 +180,7 @@
     </div>
 
     <script>
+        const dbForm = document.getElementById('dbForm');
         const mongodbRadio = document.getElementById('mongodb');
         const jsonOrJsRadio = document.getElementById('json_or_js');
         const hostInput = document.getElementById('host');
@@ -199,45 +189,44 @@
         const dbFileInput = document.getElementById('db_file');
         const mongodbError = document.getElementById('mongodbError');
         const jsonError = document.getElementById('jsonError');
+        const successMessage = document.getElementById('successMessage');
+        const submitButton = document.getElementById('submitButton');
 
         function toggleInputs() {
-            if (mongodbRadio.checked) {
-                hostInput.disabled = false;
-                portInput.disabled = false;
-                databaseInput.disabled = false;
-                dbFileInput.disabled = true;
-                mongodbError.style.display = 'none';
-                jsonError.style.display = 'none';
-            } else if (jsonOrJsRadio.checked) {
-                hostInput.disabled = true;
-                portInput.disabled = true;
-                databaseInput.disabled = true;
-                dbFileInput.disabled = false;
-                mongodbError.style.display = 'none';
-                jsonError.style.display = 'none';
-            }
+            const isMongoDBSelected = mongodbRadio.checked;
+            hostInput.disabled = !isMongoDBSelected;
+            portInput.disabled = !isMongoDBSelected;
+            databaseInput.disabled = !isMongoDBSelected;
+            dbFileInput.disabled = isMongoDBSelected;
+
+            mongodbError.style.display = 'none';
+            jsonError.style.display = 'none';
+            successMessage.textContent = '';
         }
 
         mongodbRadio.addEventListener('change', toggleInputs);
         jsonOrJsRadio.addEventListener('change', toggleInputs);
 
-        document.getElementById('dbForm').addEventListener('submit', (event) => {
-            let valid = true;
+        dbForm.addEventListener('submit', (event) => {
+            let isValid = true;
 
             if (mongodbRadio.checked) {
                 if (!hostInput.value || !portInput.value || !databaseInput.value) {
                     mongodbError.style.display = 'block';
-                    valid = false;
+                    isValid = false;
                 }
             } else if (jsonOrJsRadio.checked) {
                 if (!dbFileInput.files.length) {
                     jsonError.style.display = 'block';
-                    valid = false;
+                    isValid = false;
                 }
             }
 
-            if (!valid) {
+            if (!isValid) {
                 event.preventDefault();
+            } else {
+                submitButton.disabled = true;
+                successMessage.textContent = 'Connecting... Please wait.';
             }
         });
     </script>

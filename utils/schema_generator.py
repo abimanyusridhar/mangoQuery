@@ -2,95 +2,85 @@ from pymongo import MongoClient
 from collections import defaultdict
 from pyvis.network import Network
 import json
-import os
+import logging
+from datetime import datetime
 
-client = None  # Global MongoDB client object
+# Configure logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+# Global MongoDB client object
+client = None
+
+DEFAULT_MONGODB_HOST = "localhost"
+DEFAULT_MONGODB_PORT = 27017
 
 
 def connect_to_db(db_details: dict):
     """
     Connect to a MongoDB instance.
-
     Parameters:
-    db_details (dict): MongoDB connection details with:
-        - type: 'mongodb'
-        - host: MongoDB host (default 'localhost')
-        - port: MongoDB port (default 27017)
-        - database: Database name to connect to
-
+        db_details (dict): MongoDB connection details.
     Returns:
-    Database object if successful, None otherwise.
+        MongoDB database object if successful, None otherwise.
     """
     global client
     try:
         if db_details.get("type") != "mongodb":
             raise ValueError("Unsupported database type. Only MongoDB is supported.")
 
-        host = db_details.get("host", "localhost")
-        port = db_details.get("port", 27017)
+        host = db_details.get("host", DEFAULT_MONGODB_HOST)
+        port = db_details.get("port", DEFAULT_MONGODB_PORT)
         client = MongoClient(host=host, port=port)
 
         # Ping the MongoDB server
         client.admin.command("ping")
-        print(f"Connected to MongoDB server at {host}:{port}")
+        logging.info(f"Connected to MongoDB server at {host}:{port}")
 
         db_name = db_details.get("database")
         if not db_name:
             raise ValueError("Database name is required.")
 
         db = client[db_name]
-        print(f"Connected to MongoDB database '{db_name}' successfully.")
+        logging.info(f"Connected to MongoDB database '{db_name}' successfully.")
         return db
     except Exception as e:
-        print(f"Error: Unable to connect to database. Details: {e}")
+        logging.error(f"Error: Unable to connect to the database. Details: {e}")
         return None
 
 
 def process_external_file(file_path: str, db):
     """
     Process an external MongoDB data file and load its content into the database.
-
     Parameters:
-    file_path (str): Path to the .js or .json file.
-    db (Database): The MongoDB database object to load data into.
-
+        file_path (str): Path to the .json file.
+        db (Database): MongoDB database object to load data into.
     """
     try:
         with open(file_path, "r", encoding="utf-8") as file:
-            file_content = file.read().replace("db.", "").strip()
-            collections = [
-                line.strip() for line in file_content.split(";") if line.strip()
-            ]
-
-            for collection_data in collections:
-                if ".insert(" in collection_data:
-                    collection_name, json_data = collection_data.split(".insert(", 1)
-                    collection_name = collection_name.strip()
-                    json_data = json.loads(json_data.strip())
-
-                    collection = db[collection_name]
-                    collection.insert_many(
-                        json_data if isinstance(json_data, list) else [json_data]
-                    )
-                    print(f"Data from '{file_path}' imported into '{collection_name}'.")
+            data = json.load(file)
+            if not isinstance(data, dict):
+                raise ValueError("Invalid file format. Root element must be a JSON object.")
+            for collection_name, collection_data in data.items():
+                if not isinstance(collection_data, list):
+                    raise ValueError(f"Collection '{collection_name}' must be a list of documents.")
+                db[collection_name].insert_many(collection_data)
+                logging.info(f"Imported {len(collection_data)} documents into '{collection_name}' collection.")
     except json.JSONDecodeError as e:
-        print(f"JSON Parsing Error: {e}")
+        logging.error(f"JSON Parsing Error: {e}")
     except Exception as e:
-        print(f"Error processing external file: {e}")
+        logging.error(f"Error processing external file: {e}")
 
 
 def generate_schema(db):
     """
     Generate a schema for the MongoDB database.
-
     Parameters:
-    db (Database): The MongoDB database object.
-
+        db (Database): MongoDB database object.
     Returns:
-    dict: A schema containing collection names, fields, and sample data.
+        dict: Schema containing collection names, fields, and sample data.
     """
+    schema = {}
     try:
-        schema = {}
         for collection_name in db.list_collection_names():
             collection = db[collection_name]
             sample_data = collection.find_one() or {}
@@ -98,24 +88,20 @@ def generate_schema(db):
                 "fields": list(sample_data.keys()),
                 "sample": sample_data,
             }
-        print("Schema generation successful.")
+        logging.info("Schema generation successful.")
         return schema
     except Exception as e:
-        print(f"Error generating schema: {e}")
-        return None
+        logging.error(f"Error generating schema: {e}")
+        return schema
 
 
 def get_schema_details(schema: dict):
     """
     Extract detailed schema information, including inferred relationships.
-
     Parameters:
-    schema (dict): The generated schema.
-
+        schema (dict): The generated schema.
     Returns:
-    tuple: 
-        - collections (dict): Collection details with fields and data types.
-        - relationships (dict): Inferred relationships between collections.
+        tuple: Collection details with fields/types and relationships.
     """
     collections = {}
     relationships = defaultdict(list)
@@ -126,7 +112,6 @@ def get_schema_details(schema: dict):
             field_types = {field: type(value).__name__ for field, value in sample.items()}
             collections[collection_name] = {"fields": fields, "field_types": field_types}
 
-            # Identify relationships (basic reference detection)
             for field, value in sample.items():
                 if isinstance(value, dict) and "$ref" in value and "$id" in value:
                     ref_collection = value.get("$ref")
@@ -137,21 +122,24 @@ def get_schema_details(schema: dict):
                             "referenced_id": value.get("$id"),
                         }
                     )
-        print("Schema details extraction successful.")
+        logging.info("Schema details extraction successful.")
         return collections, dict(relationships)
     except Exception as e:
-        print(f"Error extracting schema details: {e}")
+        logging.error(f"Error extracting schema details: {e}")
         return collections, dict(relationships)
 
 
-def visualize_schema(schema: dict, relationships: dict):
+def visualize_schema(schema: dict, relationships: dict, output_file=None):
     """
     Visualize the MongoDB schema and relationships using PyVis.
-
     Parameters:
-    schema (dict): Collection details with fields and types.
-    relationships (dict): Inferred relationships between collections.
+        schema (dict): Collection details with fields/types.
+        relationships (dict): Inferred relationships.
+        output_file (str): File name for saving the visualization. Defaults to timestamp-based name.
     """
+    if not output_file:
+        output_file = f"schema_visualization_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
+
     net = Network(height="750px", width="100%", directed=True)
     try:
         # Add nodes for collections and fields
@@ -179,19 +167,18 @@ def visualize_schema(schema: dict, relationships: dict):
                     color="#e74c3c",
                 )
 
-        output_file = "schema_visualization.html"
         net.show(output_file)
-        print(f"Schema visualization saved as '{output_file}'.")
+        logging.info(f"Schema visualization saved as '{output_file}'.")
     except Exception as e:
-        print(f"Error visualizing schema: {e}")
+        logging.error(f"Error visualizing schema: {e}")
 
 
 # Main Execution Flow
 if __name__ == "__main__":
     db_details = {
         "type": "mongodb",
-        "host": "localhost",
-        "port": 27017,
+        "host": DEFAULT_MONGODB_HOST,
+        "port": DEFAULT_MONGODB_PORT,
         "database": "test_db",
     }
     db = connect_to_db(db_details)
@@ -201,6 +188,6 @@ if __name__ == "__main__":
             collections, relationships = get_schema_details(schema)
             visualize_schema(collections, relationships)
         else:
-            print("Failed to generate schema.")
+            logging.error("Failed to generate schema.")
     else:
-        print("Failed to connect to the database.")
+        logging.error("Failed to connect to the database.")
