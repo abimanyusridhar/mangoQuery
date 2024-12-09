@@ -1,0 +1,198 @@
+{
+  "users": [
+    {
+      "_id": 1,
+      "name": "Alice Johnson",
+      "email": "alice.johnson@example.com",
+      "registeredDate": "2023-01-15",
+      "borrowedBooks": [101, 102],
+      "membershipTier": "Gold",
+      "address": {
+        "street": "123 Main St",
+        "city": "Springfield",
+        "state": "IL",
+        "zip": "62704"
+      }
+    },
+    {
+      "_id": 2,
+      "name": "Bob Smith",
+      "email": "bob.smith@example.com",
+      "registeredDate": "2023-02-10",
+      "borrowedBooks": [103],
+      "membershipTier": "Silver",
+      "address": {
+        "street": "456 Oak St",
+        "city": "Shelbyville",
+        "state": "IL",
+        "zip": "62565"
+      }
+    },
+    {
+      "_id": 3,
+      "name": "Charlie Davis",
+      "email": "charlie.davis@example.com",
+      "registeredDate": "2023-03-01",
+      "borrowedBooks": [],
+      "membershipTier": "Bronze",
+      "address": {
+        "street": "789 Pine St",
+        "city": "Ogdenville",
+        "state": "IL",
+        "zip": "62573"
+      }
+    }
+  ],
+  "books": [
+    {
+      "_id": 101,
+      "title": "Unlocking Android",
+      "isbn": "1933988673",
+      "authors": ["W. Frank Ableson", "Charlie Collins", "Robi Sen"],
+      "categories": ["Open Source", "Mobile"],
+      "pageCount": 416,
+      "publishedDate": "2009-04-01",
+      "availableCopies": 2,
+      "library_id": 1
+    },
+    {
+      "_id": 102,
+      "title": "Android Programming",
+      "isbn": "1935182722",
+      "authors": ["Bill Phillips", "Chris Stewart", "Kristin Marsicano"],
+      "categories": ["Programming", "Mobile"],
+      "pageCount": 928,
+      "publishedDate": "2015-02-10",
+      "availableCopies": 1,
+      "library_id": 1
+    },
+    {
+      "_id": 103,
+      "title": "Clean Code",
+      "isbn": "9780132350884",
+      "authors": ["Robert C. Martin"],
+      "categories": ["Programming", "Software Development"],
+      "pageCount": 464,
+      "publishedDate": "2008-08-01",
+      "availableCopies": 0,
+      "library_id": 2
+    },
+    {
+      "_id": 104,
+      "title": "The Pragmatic Programmer",
+      "isbn": "9780201616224",
+      "authors": ["Andrew Hunt", "David Thomas"],
+      "categories": ["Programming", "Software Development"],
+      "pageCount": 352,
+      "publishedDate": "1999-10-20",
+      "availableCopies": 5,
+      "library_id": 2
+    },
+    {
+      "_id": 105,
+      "title": "Refactoring",
+      "isbn": "9780201485677",
+      "authors": ["Martin Fowler"],
+      "categories": ["Programming", "Software Development"],
+      "pageCount": 448,
+      "publishedDate": "1999-07-08",
+      "availableCopies": 3,
+      "library_id": 3
+    }
+  ],
+  "borrowed_books": [
+    {
+      "_id": 1,
+      "user_id": 1,
+      "book_id": 101,
+      "borrowDate": "2023-04-01",
+      "returnDate": null,
+      "overdue": false
+    },
+    {
+      "_id": 2,
+      "user_id": 1,
+      "book_id": 102,
+      "borrowDate": "2023-05-10",
+      "returnDate": null,
+      "overdue": true
+    },
+    {
+      "_id": 3,
+      "user_id": 2,
+      "book_id": 103,
+      "borrowDate": "2023-06-15",
+      "returnDate": "2023-07-01",
+      "overdue": false
+    },
+    {
+      "_id": 4,
+      "user_id": 3,
+      "book_id": 105,
+      "borrowDate": "2023-07-10",
+      "returnDate": null,
+      "overdue": false
+    }
+  ],
+  "libraries": [
+    {
+      "_id": 1,
+      "name": "Central Library",
+      "location": {
+        "street": "1 Library Plaza",
+        "city": "Springfield",
+        "state": "IL",
+        "zip": "62701"
+      },
+      "phone": "555-123-4567"
+    },
+    {
+      "_id": 2,
+      "name": "East Branch",
+      "location": {
+        "street": "456 Elm St",
+        "city": "Shelbyville",
+        "state": "IL",
+        "zip": "62565"
+      },
+      "phone": "555-987-6543"
+    },
+    {
+      "_id": 3,
+      "name": "West Branch",
+      "location": {
+        "street": "789 Maple Ave",
+        "city": "Ogdenville",
+        "state": "IL",
+        "zip": "62573"
+      },
+      "phone": "555-456-7890"
+    }
+  ],
+  "reviews": [
+    {
+      "_id": 1,
+      "book_id": 101,
+      "user_id": 1,
+      "rating": 5,
+      "comment": "Excellent introduction to Android development.",
+      "date": "2023-04-15"
+    },
+    {
+      "_id": 2,
+      "book_id": 103,
+      "user_id": 2,
+      "rating": 4,
+      "comment": "Very insightful and practical.",
+      "date": "2023-07-02"
+    },
+    {
+      "_id": 3,
+      "book_id": 104,
+      "user_id": 3,
+      "rating": 5,
+      "comment": "A must-read for developers!",
+      "date": "2023-08-05"
+    }
+  ]
+}

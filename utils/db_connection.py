@@ -2,14 +2,14 @@ from pymongo import MongoClient
 import os
 import json
 import logging
+from typing import Optional, Dict, Any
 
 # Initialize logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 client = None  # Global MongoDB client object
 
-
-def connect_to_db(db_details):
+def connect_to_db(db_details: Dict[str, Any]) -> bool:
     """
     Connect to a MongoDB database or process data from a JSON file.
 
@@ -39,7 +39,7 @@ def connect_to_db(db_details):
         return False
 
 
-def connect_to_mongodb(db_details):
+def connect_to_mongodb(db_details: Dict[str, Any]) -> bool:
     """
     Connect to a MongoDB instance.
 
@@ -62,6 +62,15 @@ def connect_to_mongodb(db_details):
         client.admin.command('ping')  # Test the connection
         logging.info(f"Connected to MongoDB server at {host}:{port}")
         logging.info(f"Connected to database: {database}")
+
+        # Optional: Log collections and their document counts
+        db = client[database]
+        collections = db.list_collection_names()
+        logging.info(f"Found {len(collections)} collections in the database.")
+        for collection in collections:
+            count = db[collection].count_documents({})
+            logging.info(f"Collection '{collection}' has {count} documents.")
+
         return True
 
     except Exception as e:
@@ -69,9 +78,9 @@ def connect_to_mongodb(db_details):
         return False
 
 
-def process_json_file(file_path):
+def process_json_file(file_path: str) -> bool:
     """
-    Process and load data from a JSON file into a mock database.
+    Process and load data from a JSON file.
 
     Parameters:
     file_path (str): Path to the .json file.
@@ -90,13 +99,23 @@ def process_json_file(file_path):
         with open(file_path, 'r', encoding='utf-8') as file:
             data = json.load(file)
 
-        # Validate and log each collection
+        # Validate structure and log collection details
+        if not isinstance(data, dict):
+            raise ValueError("Invalid file format. Root element must be a JSON object.")
+
+        total_docs = 0
+        unique_fields = set()
         for collection_name, collection_data in data.items():
             if not isinstance(collection_data, list):
                 raise ValueError(f"Collection '{collection_name}' must be a list of documents.")
             logging.info(f"Loaded collection '{collection_name}' with {len(collection_data)} documents.")
+            total_docs += len(collection_data)
+            for doc in collection_data:
+                unique_fields.update(doc.keys())
 
-        logging.info(f"Data from '{file_path}' processed successfully.")
+        logging.info(f"Processed {len(data)} collections with a total of {total_docs} documents.")
+        logging.info(f"Unique fields across collections: {len(unique_fields)}")
+
         return True
 
     except json.JSONDecodeError as e:
@@ -107,7 +126,7 @@ def process_json_file(file_path):
         return False
 
 
-def get_connection():
+def get_connection() -> Optional[MongoClient]:
     """
     Get the active MongoDB client.
 
@@ -120,6 +139,47 @@ def get_connection():
     else:
         logging.warning("No active MongoDB connection. Use `connect_to_db` to establish a connection.")
         return None
+
+
+def generate_schema(db):
+    """
+    Generate a schema for the MongoDB database.
+    Parameters:
+        db (Database): MongoDB database object.
+    Returns:
+        dict: Schema containing collection names, fields, sample data, and statistics.
+    """
+    schema = {}
+    try:
+        for collection_name in db.list_collection_names():
+            collection = db[collection_name]
+            sample_data = collection.find_one() or {}
+            total_documents = collection.count_documents({})
+            avg_document_size = collection.aggregate([
+                {"$group": {"_id": None, "avgSize": {"$avg": {"$bsonSize": "$$ROOT"}}}}])
+            avg_size = next(avg_document_size, {}).get("avgSize", 0)
+
+            # Collect indexes
+            indexes = collection.index_information()
+            index_info = [{"name": index, "fields": info["key"]} for index, info in indexes.items()]
+
+            # Identify nullable fields (those with None values in a sample document)
+            nullable_fields = [field for field, value in sample_data.items() if value is None]
+
+            schema[collection_name] = {
+                "fields": list(sample_data.keys()),
+                "sample": sample_data,
+                "total_documents": total_documents,
+                "avg_document_size": avg_size / 1024,  # Convert bytes to KB
+                "nullable_fields": nullable_fields,
+                "indexes": index_info,
+            }
+
+        logging.info("Schema generation successful.")
+        return schema
+    except Exception as e:
+        logging.error(f"Error generating schema: {e}")
+        return schema
 
 
 # Workflow Example

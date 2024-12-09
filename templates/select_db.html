@@ -13,117 +13,175 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(to right, #f4f4f9, #eef2f3);
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(120deg, #e0f7fa, #ffffff);
             color: #333;
-            line-height: 1.6;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
+            padding: 2rem;
         }
 
-        h2 {
-            margin-bottom: 20px;
-            font-size: 1.8rem;
+        /* Header Section */
+        .header {
             text-align: center;
-            color: #444;
+            margin-bottom: 2rem;
         }
 
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #00796b;
+        }
+
+        .header p {
+            font-size: 1rem;
+            color: #555;
+            margin-top: 0.5rem;
+        }
+
+        /* Form Styles */
         form {
+            width: 100%;
+            max-width: 600px;
             background: #fff;
-            max-width: 500px;
-            width: 90%;
-            padding: 20px;
+            padding: 2rem;
             border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            animation: fadeIn 0.8s ease-in-out;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
 
         label {
-            font-size: 1rem;
-            color: #555;
-            margin-bottom: 8px;
             display: block;
+            margin-bottom: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #444;
         }
 
         input[type="text"],
         input[type="number"],
         input[type="file"] {
             width: 100%;
-            padding: 10px;
-            margin-top: 5px;
+            padding: 12px 14px;
             border: 1px solid #ccc;
-            border-radius: 5px;
+            border-radius: 8px;
             font-size: 1rem;
-            background: #f9f9f9;
+            margin-top: 4px;
+            margin-bottom: 1.5rem;
+            background: #fafafa;
+            transition: all 0.3s;
         }
 
-        input:focus {
-            border-color: #4caf50;
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="file"]:focus {
+            border-color: #00796b;
             outline: none;
+            box-shadow: 0 0 8px rgba(0, 121, 107, 0.2);
         }
 
-        input[type="radio"] {
-            margin-right: 10px;
+        .radio-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #f1f8e9;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid #dcedc8;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .radio-group input[type="radio"] {
+            display: none;
+        }
+
+        .radio-group label:hover {
+            background: #c8e6c9;
+        }
+
+        .radio-group input[type="radio"]:checked + label {
+            background: #00796b;
+            color: #fff;
         }
 
         .error-message {
-            color: red;
-            font-size: 0.9rem;
-            margin-top: 5px;
-            font-weight: bold;
+            font-size: 0.85rem;
+            color: #d32f2f;
+            margin-top: -1rem;
+            margin-bottom: 1rem;
             display: none;
         }
 
         .success-message {
-            color: green;
-            font-size: 1rem;
+            font-size: 0.95rem;
+            color: #388e3c;
             text-align: center;
-            margin-top: 10px;
+            margin-top: 1rem;
         }
 
         button {
             width: 100%;
-            padding: 12px;
-            background-color: #4caf50;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
+            padding: 14px;
             font-size: 1.1rem;
             font-weight: bold;
-            margin-top: 20px;
-            transition: background-color 0.3s ease, transform 0.2s ease;
+            color: #fff;
+            background-color: #00796b;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background-color: #004d40;
         }
 
         button:disabled {
-            background-color: #bbb;
+            background-color: #bdbdbd;
             cursor: not-allowed;
         }
 
-        button:hover:not(:disabled) {
-            background-color: #45a049;
-            transform: translateY(-3px);
+        /* Tooltip Styles */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
         }
 
-        hr {
-            border: 0;
-            height: 1px;
-            background: #ddd;
-            margin: 20px 0;
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #444;
+            color: #fff;
+            padding: 6px 10px;
+            font-size: 0.85rem;
+            border-radius: 5px;
+            white-space: nowrap;
         }
 
+        /* Footer Section */
         .footer {
-            margin-top: 30px;
-            font-size: 0.9rem;
-            color: #777;
             text-align: center;
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            color: #888;
         }
 
         .footer a {
-            color: #4caf50;
+            color: #00796b;
             text-decoration: none;
         }
 
@@ -142,42 +200,56 @@
                 transform: translateY(0);
             }
         }
+
+        form {
+            animation: fadeIn 0.8s ease-in-out;
+        }
     </style>
 </head>
 <body>
-    <h2>Select a Database</h2>
+
+    <!-- Header Section -->
+    <header class="header">
+        <h1>DataSpeak: Select a Database</h1>
+        <p>Choose your preferred database configuration method below.</p>
+    </header>
+
+    <!-- Form Section -->
     <form id="dbForm" method="POST" enctype="multipart/form-data">
-        <!-- MongoDB Configuration -->
-        <div>
-            <label>
+        <div class="radio-group">
+            <!-- MongoDB Configuration -->
+            <div class="tooltip" data-tooltip="Fill these fields to connect to MongoDB.">
                 <input type="radio" name="db_type" value="mongodb" id="mongodb" required>
-                Connect to MongoDB
-            </label>
-            <label for="host">Host: <input type="text" name="host" id="host" placeholder="e.g., localhost" disabled></label>
-            <label for="port">Port: <input type="number" name="port" id="port" placeholder="e.g., 27017" disabled></label>
-            <label for="database">Database Name: <input type="text" name="database" id="database" placeholder="e.g., my_database" disabled></label>
-            <div class="error-message" id="mongodbError">Please fill out all MongoDB fields.</div>
-        </div>
+                <label for="mongodb">Connect to MongoDB</label>
+            </div>
 
-        <hr>
-
-        <!-- JSON or JS File Upload -->
-        <div>
-            <label>
+            <!-- JSON or JS File Upload -->
+            <div class="tooltip" data-tooltip="Upload a valid JSON or JS file.">
                 <input type="radio" name="db_type" value="json_or_js" id="json_or_js" required>
-                Upload JSON or JS File
-            </label>
-            <label for="db_file">Choose File: <input type="file" name="db_file" id="db_file" accept=".json, .js" disabled></label>
-            <div class="error-message" id="jsonError">Please upload a valid JSON or JS file.</div>
+                <label for="json_or_js">Upload JSON or JS File</label>
+            </div>
         </div>
 
-        <button type="submit" id="submitButton">Connect</button>
-        <div class="success-message" id="successMessage"></div>
+        <label for="host">Host:</label>
+        <input type="text" name="host" id="host" placeholder="e.g., localhost" disabled>
+        <label for="port">Port:</label>
+        <input type="number" name="port" id="port" placeholder="e.g., 27017" disabled>
+        <label for="database">Database Name:</label>
+        <input type="text" name="database" id="database" placeholder="e.g., my_database" disabled>
+        <label for="db_file">Choose File:</label>
+        <input type="file" name="db_file" id="db_file" accept=".json, .js" disabled>
+
+        <div class="error-message" id="mongodbError">Please fill out all MongoDB fields.</div>
+        <div class="error-message" id="jsonError">Please upload a valid JSON or JS file.</div>
+
+        <button type="submit" id="submitButton" disabled>Connect</button>
+        <div class="success-message" id="successMessage" aria-live="polite"></div>
     </form>
 
-    <div class="footer">
+    <!-- Footer Section -->
+    <footer class="footer">
         &copy; 2024 <a href="#">DataSpeak</a> - NLP-Driven Database System
-    </div>
+    </footer>
 
     <script>
         const dbForm = document.getElementById('dbForm');
@@ -187,48 +259,34 @@
         const portInput = document.getElementById('port');
         const databaseInput = document.getElementById('database');
         const dbFileInput = document.getElementById('db_file');
-        const mongodbError = document.getElementById('mongodbError');
-        const jsonError = document.getElementById('jsonError');
-        const successMessage = document.getElementById('successMessage');
         const submitButton = document.getElementById('submitButton');
 
         function toggleInputs() {
-            const isMongoDBSelected = mongodbRadio.checked;
-            hostInput.disabled = !isMongoDBSelected;
-            portInput.disabled = !isMongoDBSelected;
-            databaseInput.disabled = !isMongoDBSelected;
-            dbFileInput.disabled = isMongoDBSelected;
+            const isMongoDB = mongodbRadio.checked;
+            hostInput.disabled = !isMongoDB;
+            portInput.disabled = !isMongoDB;
+            databaseInput.disabled = !isMongoDB;
+            dbFileInput.disabled = isMongoDB;
 
-            mongodbError.style.display = 'none';
-            jsonError.style.display = 'none';
-            successMessage.textContent = '';
+            validateForm();
+        }
+
+        function validateForm() {
+            let isValid = false;
+            if (mongodbRadio.checked) {
+                isValid = hostInput.value && portInput.value && databaseInput.value;
+            } else if (jsonOrJsRadio.checked) {
+                isValid = dbFileInput.files.length > 0;
+            }
+            submitButton.disabled = !isValid;
         }
 
         mongodbRadio.addEventListener('change', toggleInputs);
         jsonOrJsRadio.addEventListener('change', toggleInputs);
-
-        dbForm.addEventListener('submit', (event) => {
-            let isValid = true;
-
-            if (mongodbRadio.checked) {
-                if (!hostInput.value || !portInput.value || !databaseInput.value) {
-                    mongodbError.style.display = 'block';
-                    isValid = false;
-                }
-            } else if (jsonOrJsRadio.checked) {
-                if (!dbFileInput.files.length) {
-                    jsonError.style.display = 'block';
-                    isValid = false;
-                }
-            }
-
-            if (!isValid) {
-                event.preventDefault();
-            } else {
-                submitButton.disabled = true;
-                successMessage.textContent = 'Connecting... Please wait.';
-            }
-        });
+        hostInput.addEventListener('input', validateForm);
+        portInput.addEventListener('input', validateForm);
+        databaseInput.addEventListener('input', validateForm);
+        dbFileInput.addEventListener('change', validateForm);
     </script>
 </body>
 </html>

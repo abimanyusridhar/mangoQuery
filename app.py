@@ -28,6 +28,7 @@ except Exception as e:
     nlp_model = None
 
 # Helper Functions
+
 def serialize_schema(schema):
     """Serialize schema and handle MongoDB-specific types."""
     serialized_schema = {}
@@ -40,6 +41,10 @@ def serialize_schema(schema):
                 key: (str(value) if isinstance(value, (ObjectId, DBRef)) else value)
                 for key, value in sample.items()
             },
+            "total_documents": details.get("total_documents", 0),
+            "avg_document_size": details.get("avg_document_size", 0),
+            "nullable_fields": details.get("nullable_fields", []),
+            "indexes": details.get("indexes", []),
         }
     return serialized_schema
 
@@ -55,15 +60,29 @@ def generate_schema(data):
                         "fields": list(first_doc.keys()),
                         "field_types": {key: type(value).__name__ for key, value in first_doc.items()},
                         "sample": first_doc,
+                        "total_documents": len(documents),
+                        "avg_document_size": sum(len(str(doc)) for doc in documents) / len(documents) if documents else 0,
+                        "nullable_fields": [key for key, value in first_doc.items() if value is None],
+                        "indexes": []  # Add logic if required for indexing (e.g., from JSON metadata)
                     }
         else:  # MongoDB data
             for collection_name in data.list_collection_names():
                 collection = data[collection_name]
                 sample_data = collection.find_one() or {}
+                total_documents = collection.count_documents({})
+                avg_size = collection.aggregate([{"$group": {"_id": None, "avgSize": {"$avg": {"$bsonSize": "$$ROOT"}}}}])
+                avg_document_size = next(avg_size, {}).get("avgSize", 0)
+                
+                # Extract indexes
+                indexes = collection.index_information()
                 schema[collection_name] = {
                     "fields": list(sample_data.keys()),
                     "field_types": {key: type(value).__name__ for key, value in sample_data.items()},
                     "sample": sample_data,
+                    "total_documents": total_documents,
+                    "avg_document_size": avg_document_size / 1024,  # Convert bytes to KB
+                    "nullable_fields": [key for key, value in sample_data.items() if value is None],
+                    "indexes": [{"name": index_name, "fields": index_info["key"]} for index_name, index_info in indexes.items()]
                 }
         logging.info("Schema generation successful.")
         return schema
@@ -105,6 +124,7 @@ def execute_query_with_mongo_query(mongo_query):
         return None, str(e)
 
 # Routes
+
 @app.route('/')
 def index():
     """Render homepage."""

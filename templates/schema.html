@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DataSpeak: Enhanced Schema Viewer</title>
+    <title>Database Schema | DataSpeak</title>
     <style>
         /* General Reset */
         * {
@@ -13,97 +13,69 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(to right, #ffffff, #f3f4f6);
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(120deg, #e0f7fa, #ffffff);
             color: #333;
-            line-height: 1.6;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: flex-start;
             min-height: 100vh;
-            overflow-x: hidden;
-            animation: fadeIn 1.5s ease-in-out;
+            padding: 2rem;
         }
 
         /* Header Section */
         .header {
-            background: linear-gradient(45deg, #1abc9c, #16a085);
-            color: #ffffff;
             text-align: center;
-            padding: 2rem 1rem;
-            border-radius: 12px;
             margin-bottom: 2rem;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
         }
 
         .header h1 {
             font-size: 2.5rem;
             font-weight: 700;
-            text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.3);
+            color: #00796b;
         }
 
-        /* Floating Scroll-To-Top Button */
-        .scroll-to-top {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #3a6ea5;
-            color: #ffffff;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            font-size: 20px;
-            transition: background 0.3s ease, transform 0.3s ease;
-            z-index: 1000;
+        .header p {
+            font-size: 1rem;
+            color: #555;
+            margin-top: 0.5rem;
         }
 
-        .scroll-to-top:hover {
-            background: #2a4d70;
-            transform: translateY(-4px);
-        }
-
-        /* Main Container */
+        /* Container for Schema Section */
         .container {
             width: 100%;
             max-width: 1200px;
-            padding: 1.5rem;
+            padding: 2rem;
         }
 
         /* Section Titles */
         h2 {
             font-size: 2rem;
-            color: #ffb74d;
+            color: #00796b;
             margin-bottom: 1rem;
-            text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.2);
-            border-bottom: 2px solid #ffb74d;
-            display: inline-block;
-            padding-bottom: 0.3rem;
+            text-align: center;
+            border-bottom: 2px solid #00796b;
+            padding-bottom: 0.5rem;
         }
 
-        /* Schema and Model Sections */
-        .schema-view, .model-view {
+        /* Schema Section Styles */
+        .schema-view {
             background: #ffffff;
-            color: #333333;
-            border-radius: 12px;
+            border-radius: 10px;
             padding: 2rem;
             margin-bottom: 2rem;
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
-            animation: slideUp 1s ease-out;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
 
-        .schema-list, .model-list {
+        .list-container {
             display: flex;
             flex-wrap: wrap;
             gap: 1.5rem;
             justify-content: center;
         }
 
-        .table-card, .model-card {
+        .card {
             background: #f8f9fa;
             border: 1px solid #e3e6eb;
             border-radius: 10px;
@@ -115,33 +87,13 @@
             position: relative;
         }
 
-        .table-card:hover, .model-card:hover {
+        .card:hover {
             transform: translateY(-8px);
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
         }
 
-        .tooltip {
-            position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #333;
-            color: #fff;
-            padding: 5px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            visibility: hidden;
-            opacity: 0;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-        }
-
-        .table-card:hover .tooltip, .model-card:hover .tooltip {
-            visibility: visible;
-            opacity: 1;
-        }
-
-        .table-card h3, .model-card h3 {
-            color: #2c3e50;
+        .card h3 {
+            color: #00796b;
             font-size: 1.5rem;
             margin-bottom: 1rem;
             text-align: center;
@@ -166,88 +118,89 @@
             font-style: normal;
         }
 
-        /* Footer */
+        /* Tooltip Styles */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #444;
+            color: #fff;
+            padding: 6px 10px;
+            font-size: 0.85rem;
+            border-radius: 5px;
+            white-space: nowrap;
+        }
+
+        /* Footer Section */
         .footer {
-            background: #34495e;
-            color: #ffffff;
             text-align: center;
-            padding: 1rem;
             margin-top: 2rem;
+            font-size: 0.9rem;
+            color: #888;
         }
 
-        .footer p {
-            margin: 0;
+        .footer a {
+            color: #00796b;
+            text-decoration: none;
         }
 
-        /* Animations */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
+        .footer a:hover {
+            text-decoration: underline;
         }
 
         /* Responsive Design */
         @media (max-width: 768px) {
-            .schema-list, .model-list {
+            .list-container {
                 flex-direction: column;
             }
 
-            .table-card, .model-card {
+            .card {
                 flex: 1 1 100%;
                 max-width: none;
             }
         }
     </style>
 </head>
-<script>
-    // Prevent form resubmission on page reload
-    if (window.history.replaceState) {
-        window.history.replaceState(null, null, window.location.href);
-    }
-
-    // Scroll-to-Top Functionality
-    function scrollToTop() {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-</script>
-
 <body>
+
     <!-- Header Section -->
     <header class="header">
-        <h1>DataSpeak: Enhanced Schema Viewer</h1>
+        <h1>DataSpeak: Database Schema Overview</h1>
+        <p>Explore the structure and insights of your database collections.</p>
     </header>
 
     <!-- Main Content -->
     <main class="container">
-        <!-- Schema View Section -->
-        <section class="schema-view" aria-live="polite">
-            <h2>Generated Database Schema</h2>
+
+        <!-- Schema Section -->
+        <section class="schema-view">
+            <h2>Database Schema</h2>
             {% if collections %}
-            <div class="schema-list">
+            <div class="list-container">
                 {% for collection, details in collections.items() %}
-                <div class="table-card" aria-label="Schema details for {{ collection }}">
-                    <h3>Collection: {{ collection }}</h3>
+                <div class="card">
+                    <h3>{{ collection }}</h3>
                     <ul>
+                        <li><strong>Total Documents:</strong> {{ details.total_documents }}</li>
+                        <li><strong>Avg Document Size:</strong> {{ details.avg_document_size }} KB</li>
                         <li><strong>Fields:</strong> {{ details.fields | join(', ') }}</li>
-                        {% for field, field_type in details.field_types.items() %}
-                        <li><strong>{{ field }}:</strong> <em>{{ field_type }}</em></li>
-                        {% endfor %}
+                        <li><strong>Nullable Fields:</strong> {{ details.nullable_fields | join(', ') }}</li>
+                        <li><strong>Indexes:</strong>
+                            <ul>
+                                {% for index in details.indexes %}
+                                <li>{{ index.name }}: {{ index.fields | join(', ') }}</li>
+                                {% endfor %}
+                            </ul>
+                        </li>
                     </ul>
-                    <div class="tooltip">Click for details</div>
                 </div>
                 {% endfor %}
             </div>
@@ -256,14 +209,14 @@
             {% endif %}
         </section>
 
-        <!-- Model View Section -->
-        <section class="model-view" aria-live="polite">
+        <!-- Model Relationships Section -->
+        <section class="schema-view">
             <h2>Model Relationships</h2>
             {% if relationships %}
-            <div class="model-list">
+            <div class="list-container">
                 {% for model, details in relationships.items() %}
-                <div class="model-card" aria-label="Relationship details for {{ model }}">
-                    <h3>Model: {{ model }}</h3>
+                <div class="card">
+                    <h3>{{ model }}</h3>
                     <ul>
                         {% for relation in details %}
                         <li><strong>{{ relation.field }}</strong> ↔ <em>{{ relation.from_collection }}</em></li>
@@ -273,23 +226,16 @@
                 {% endfor %}
             </div>
             {% else %}
-            <p>No model relationships identified.</p>
+            <p>No relationships found in the database.</p>
             {% endif %}
         </section>
 
-        <!-- Navigation Buttons -->
-        <div>
-            <a href="/" class="btn-primary">Back to Home</a>
-            <a href="{{ url_for('nlp_query') }}" class="btn-primary">Run NLP Query</a>
-        </div>
     </main>
 
-    <!-- Scroll-to-Top Button -->
-    <div class="scroll-to-top" onclick="scrollToTop()">▲</div>
-
-    <!-- Footer -->
+    <!-- Footer Section -->
     <footer class="footer">
-        <p>© 2024 DataSpeak | Enhanced Schema Viewer</p>
+        &copy; 2024 <a href="#">DataSpeak</a> - NLP-Driven Database Insights
     </footer>
+
 </body>
 </html>

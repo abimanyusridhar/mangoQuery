@@ -1,0 +1,163 @@
+{
+    "accounts": [
+      {
+        "account_id": 470650,
+        "limit": 10000,
+        "products": [
+          "CurrencyService",
+          "Commodity",
+          "InvestmentStock"
+        ]
+      },
+      {
+        "account_id": 794875,
+        "limit": 20000,
+        "products": [
+          "Stock Market",
+          "Options"
+        ]
+      }
+    ],
+    "users": [
+      {
+        "username": "lejoshua",
+        "name": "Michael Johnson",
+        "address": "15989 Edward Inlet\nLake Maryton, NC 39545",
+        "birthdate": { "$date": "1975-01-01T00:00:00Z" },
+        "email": "courtneypaul@example.com",
+        "accounts": [
+          470650,
+          443178
+        ],
+        "tier_and_details": {
+          "b5f19cb532fa436a9be2cf1d7d1cac8a": {
+            "tier": "Silver",
+            "benefits": [
+              "dedicated account representative"
+            ],
+            "active": true,
+            "id": "b5f19cb532fa436a9be2cf1d7d1cac8a"
+          }
+        }
+      },
+      {
+        "username": "janedoe",
+        "name": "Jane Doe",
+        "address": "1234 Oak Street\nSunshine City, CA 23456",
+        "birthdate": { "$date": "1990-03-15T00:00:00Z" },
+        "email": "janedoe@example.com",
+        "accounts": [
+          123456
+        ],
+        "tier_and_details": {
+          "123abc": {
+            "tier": "Gold",
+            "benefits": [
+              "Priority Support"
+            ],
+            "active": true,
+            "id": "123abc"
+          }
+        }
+      }
+    ],
+    "transactions": [
+      {
+        "account_id": 470650,
+        "transaction_count": 6,
+        "bucket_start_date": { "$date": "2023-01-01T00:00:00Z" },
+        "bucket_end_date": { "$date": "2023-12-31T23:59:59Z" },
+        "transactions": [
+          {
+            "date": { "$date": "2023-02-01T12:00:00Z" },
+            "amount": 1197,
+            "transaction_code": "buy",
+            "symbol": "nvda",
+            "price": "12.733002429934103",
+            "total": "15241.403908631121"
+          },
+          {
+            "date": { "$date": "2023-05-01T12:00:00Z" },
+            "amount": 8797,
+            "transaction_code": "buy",
+            "symbol": "nvda",
+            "price": "46.538731724063914",
+            "total": "409401.222976590259"
+          },
+          {
+            "date": { "$date": "2023-08-01T12:00:00Z" },
+            "amount": 6146,
+            "transaction_code": "sell",
+            "symbol": "ebay",
+            "price": "32.116008848528458",
+            "total": "197384.990383055908"
+          },
+          {
+            "date": { "$date": "2023-01-01T12:00:00Z" },
+            "amount": 253,
+            "transaction_code": "buy",
+            "symbol": "amzn",
+            "price": "37.774412261575669",
+            "total": "9556.926302178644"
+          },
+          {
+            "date": { "$date": "2023-02-15T12:00:00Z" },
+            "amount": 4521,
+            "transaction_code": "buy",
+            "symbol": "nvda",
+            "price": "10.763069758141103",
+            "total": "48659.838376555928"
+          },
+          {
+            "date": { "$date": "2023-03-01T12:00:00Z" },
+            "amount": 955,
+            "transaction_code": "buy",
+            "symbol": "csco",
+            "price": "27.992136535152877",
+            "total": "26732.490391070997"
+          }
+        ]
+      },
+      {
+        "account_id": 123456,
+        "transaction_count": 4,
+        "bucket_start_date": { "$date": "2023-01-01T00:00:00Z" },
+        "bucket_end_date": { "$date": "2023-12-31T23:59:59Z" },
+        "transactions": [
+          {
+            "date": { "$date": "2023-01-10T09:00:00Z" },
+            "amount": 1000,
+            "transaction_code": "deposit",
+            "symbol": "USD",
+            "price": "1.00",
+            "total": "1000.00"
+          },
+          {
+            "date": { "$date": "2023-02-15T10:00:00Z" },
+            "amount": 200,
+            "transaction_code": "withdraw",
+            "symbol": "USD",
+            "price": "1.00",
+            "total": "200.00"
+          },
+          {
+            "date": { "$date": "2023-03-20T11:00:00Z" },
+            "amount": 500,
+            "transaction_code": "deposit",
+            "symbol": "USD",
+            "price": "1.00",
+            "total": "500.00"
+          },
+          {
+            "date": { "$date": "2023-04-25T12:00:00Z" },
+            "amount": 100,
+            "transaction_code": "withdraw",
+            "symbol": "USD",
+            "price": "1.00",
+            "total": "100.00"
+          }
+        ]
+      }
+    ]
+  }
+  
