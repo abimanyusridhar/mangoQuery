@@ -49,7 +49,8 @@ def generate_schema(db):
             sample_data = collection.find_one() or {}
             total_documents = collection.count_documents({})
             avg_document_size = collection.aggregate([
-                {"$group": {"_id": None, "avgSize": {"$avg": {"$bsonSize": "$$ROOT"}}}}])
+                {"$group": {"_id": None, "avgSize": {"$avg": {"$bsonSize": "$$ROOT"}}}}
+            ])
             avg_size = next(avg_document_size, {}).get("avgSize", 0)
 
             # Extract field-level insights
@@ -75,23 +76,12 @@ def generate_schema(db):
         return schema
 
 
-def get_schema_details(schema: dict):
-    """Extract detailed schema information including inferred relationships."""
-    collections = {}
+def extract_relationships(schema: dict):
+    """Extract relationships between collections based on schema details."""
     relationships = defaultdict(list)
     try:
         for collection_name, details in schema.items():
-            fields = details.get("fields", [])
-            field_details = details.get("field_details", {})
-            collections[collection_name] = {
-                "fields": fields,
-                "field_details": field_details,
-                "total_documents": details["total_documents"],
-                "avg_document_size": details["avg_document_size"],
-            }
-
-            # Look for relationships based on "$ref" fields
-            for field, value in field_details.items():
+            for field, value in details.get("field_details", {}).items():
                 if isinstance(value, dict) and "$ref" in value and "$id" in value:
                     ref_collection = value.get("$ref")
                     relationships[ref_collection].append(
@@ -101,11 +91,10 @@ def get_schema_details(schema: dict):
                             "referenced_id": value.get("$id"),
                         }
                     )
-        logging.info("Schema details extraction successful.")
-        return collections, dict(relationships)
+        logging.info("Relationships successfully extracted.")
     except Exception as e:
-        logging.error(f"Error extracting schema details: {e}")
-        return collections, dict(relationships)
+        logging.warning(f"Error extracting relationships: {e}")
+    return dict(relationships)
 
 
 def visualize_schema(schema: dict, relationships: dict, output_file=None):
@@ -115,18 +104,21 @@ def visualize_schema(schema: dict, relationships: dict, output_file=None):
 
     net = Network(height="750px", width="100%", directed=True)
     try:
-        # Add nodes for collections and fields with insights
+        # Add nodes for collections and fields
         for collection, details in schema.items():
+            if not details.get("fields"):
+                continue  # Skip empty collections
+
             collection_label = (
                 f"{collection}\nDocuments: {details['total_documents']}\nAvg Size: "
                 f"{details['avg_document_size']:.2f} KB"
             )
             net.add_node(collection, label=collection_label, shape="ellipse", color="#76c7c0")
-            for field, field_info in details["field_details"].items():
+            for field, field_info in details.get("field_details", {}).items():
                 field_node = f"{collection}.{field}"
                 net.add_node(
                     field_node,
-                    label=f"{field} ({field_info['type']})\nDistinct Values: {field_info['distinct_values_count']}",
+                    label=f"{field} ({field_info['type']})\nDistinct: {field_info['distinct_values_count']}",
                     shape="box",
                     color="#f39c12",
                 )
@@ -160,8 +152,8 @@ if __name__ == "__main__":
     if db:
         schema = generate_schema(db)
         if schema:
-            collections, relationships = get_schema_details(schema)
-            visualize_schema(collections, relationships)
+            relationships = extract_relationships(schema)
+            visualize_schema(schema, relationships)
         else:
             logging.error("Failed to generate schema.")
     else:

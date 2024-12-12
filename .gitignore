@@ -1,6 +1,6 @@
 # Ignore virtual environment folder
-venv/
-uploaded_databases/
+venv
+uploaded_databases
 
 # Ignore Python bytecode files
 __pycache__/

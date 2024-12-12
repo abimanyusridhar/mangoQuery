@@ -1,101 +1,62 @@
 {
-    "collection_name_1": {
-        "fields": ["field1", "field2", "field3", "field4", "field5"],
-        "field_details": {
-            "field1": {
-                "type": "str",
-                "distinct_values_count": 5,
-                "sample_values": ["value1", "value2", "value3", "value4", "value5"]
-            },
-            "field2": {
-                "type": "int",
-                "distinct_values_count": 3,
-                "sample_values": [10, 20, 30]
-            },
-            "field3": {
-                "type": "bool",
-                "distinct_values_count": 2,
-                "sample_values": [true, false]
-            },
-            "field4": {
-                "type": "array",
-                "distinct_values_count": 4,
-                "sample_values": [[1, 2], [2, 3], [3, 4], [4, 5]]
-            },
-            "field5": {
-                "type": "object",
-                "distinct_values_count": 2,
-                "sample_values": [
-                    {"nested_field1": "value1", "nested_field2": 100},
-                    {"nested_field1": "value2", "nested_field2": 200}
-                ]
-            }
+    "users": {
+        "fields": ["_id", "name", "email", "age", "created_at", "updated_at"],
+        "field_types": {
+            "_id": "ObjectId",
+            "name": "String",
+            "email": "String",
+            "age": "Integer",
+            "created_at": "Date",
+            "updated_at": "Date"
         },
-        "total_documents": 100,
-        "avg_document_size": 0.25
-    },
-    "collection_name_2": {
-        "fields": ["fieldA", "fieldB", "fieldC", "fieldD"],
-        "field_details": {
-            "fieldA": {
-                "type": "str",
-                "distinct_values_count": 2,
-                "sample_values": ["abc", "xyz"]
-            },
-            "fieldB": {
-                "type": "int",
-                "distinct_values_count": 4,
-                "sample_values": [1, 2, 3, 4]
-            },
-            "fieldC": {
-                "type": "date",
-                "distinct_values_count": 3,
-                "sample_values": [
-                    "2024-01-01T00:00:00Z",
-                    "2024-02-01T00:00:00Z",
-                    "2024-03-01T00:00:00Z"
-                ]
-            },
-            "fieldD": {
-                "type": "array",
-                "distinct_values_count": 3,
-                "sample_values": [
-                    [{"subfieldA": "val1"}, {"subfieldA": "val2"}],
-                    [{"subfieldB": "val1"}],
-                    [{"subfieldC": "val3"}]
-                ]
-            }
+        "sample": {
+            "_id": "60f5b3b8a3b8e2a8e9f8c982",
+            "name": "John Doe",
+            "email": "johndoe@example.com",
+            "age": 28,
+            "created_at": "2020-07-01T12:00:00Z",
+            "updated_at": "2020-07-01T12:30:00Z"
         },
-        "total_documents": 50,
-        "avg_document_size": 0.5
-    },
-    "relationships": {
-        "related_collection_1": [
-            {
-                "from_collection": "collection_name_1",
-                "field": "fieldX",
-                "referenced_id": "ObjectId('abc123')"
+        "total_documents": 1500,
+        "avg_document_size": 1.2,
+        "nullable_fields": ["updated_at"],
+        "indexes": [
+            {"name": "_id_", "fields": ["_id"]},
+            {"name": "email_unique", "fields": ["email"]}
+        ],
+        "field_distribution": {
+            "name": {
+                "most_common": "John Doe",
+                "distinct_values": 1200
             },
-            {
-                "from_collection": "collection_name_2",
-                "field": "fieldD",
-                "referenced_id": "ObjectId('xyz789')"
+            "age": {
+                "average": 30,
+                "range": {"min": 18, "max": 60}
             }
+        }
+    },
+    "orders": {
+        "fields": ["_id", "user_id", "order_date", "total_amount", "status"],
+        "field_types": {
+            "_id": "ObjectId",
+            "user_id": "ObjectId",
+            "order_date": "Date",
+            "total_amount": "Decimal",
+            "status": "String"
+        },
+        "total_documents": 3500,
+        "avg_document_size": 2.5,
+        "nullable_fields": ["status"],
+        "indexes": [
+            {"name": "_id_", "fields": ["_id"]},
+            {"name": "user_id_index", "fields": ["user_id"]}
         ],
-        "object_id_references": [
-            {
-                "from_collection": "collection_name_2",
-                "field": "fieldB",
-                "referenced_id": "ObjectId('67890def')"
+        "relationships": {
+            "user_id": {
+                "type": "reference",
+                "to_collection": "users",
+                "field": "_id"
             }
-        ],
-        "dbref_references": [
-            {
-                "from_collection": "collection_name_3",
-                "field": "fieldX",
-                "referenced_collection": "collection_name_1",
-                "referenced_id": "ObjectId('abc123')"
-            }
-        ]
+        }
     }
 }

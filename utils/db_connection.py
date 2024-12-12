@@ -30,14 +30,16 @@ def connect_to_db(db_details: Dict[str, Any]) -> bool:
         if db_type == 'mongodb':
             return connect_to_mongodb(db_details)
         elif db_type == 'json':
-            return process_json_file(db_details.get('file_path'))
+            file_path = db_details.get('file_path')
+            if not file_path:
+                raise ValueError("File path must be provided for JSON data.")
+            return process_json_file(file_path)
         else:
             raise ValueError("Unsupported database type. Choose 'mongodb' or 'json'.")
 
     except Exception as e:
         logging.error(f"Error in `connect_to_db`: {e}")
         return False
-
 
 def connect_to_mongodb(db_details: Dict[str, Any]) -> bool:
     """
@@ -77,7 +79,6 @@ def connect_to_mongodb(db_details: Dict[str, Any]) -> bool:
         logging.error(f"MongoDB Connection Error: {e}")
         return False
 
-
 def process_json_file(file_path: str) -> bool:
     """
     Process and load data from a JSON file.
@@ -89,9 +90,8 @@ def process_json_file(file_path: str) -> bool:
     bool: True if processed successfully, False otherwise.
     """
     try:
-        # Validate file existence and type
-        if not file_path or not os.path.exists(file_path):
-            raise ValueError("Invalid file path. File does not exist.")
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"File not found: {file_path}")
         if not file_path.endswith('.json'):
             raise ValueError("Unsupported file type. Only .json files are allowed.")
 
@@ -99,15 +99,15 @@ def process_json_file(file_path: str) -> bool:
         with open(file_path, 'r', encoding='utf-8') as file:
             data = json.load(file)
 
-        # Validate structure and log collection details
         if not isinstance(data, dict):
-            raise ValueError("Invalid file format. Root element must be a JSON object.")
+            raise ValueError("Invalid JSON format. Root element must be a JSON object.")
 
         total_docs = 0
         unique_fields = set()
         for collection_name, collection_data in data.items():
             if not isinstance(collection_data, list):
                 raise ValueError(f"Collection '{collection_name}' must be a list of documents.")
+
             logging.info(f"Loaded collection '{collection_name}' with {len(collection_data)} documents.")
             total_docs += len(collection_data)
             for doc in collection_data:
@@ -115,16 +115,14 @@ def process_json_file(file_path: str) -> bool:
 
         logging.info(f"Processed {len(data)} collections with a total of {total_docs} documents.")
         logging.info(f"Unique fields across collections: {len(unique_fields)}")
-
         return True
 
-    except json.JSONDecodeError as e:
-        logging.error(f"JSON Parsing Error in '{file_path}': {e}")
-        return False
-    except Exception as e:
+    except (FileNotFoundError, json.JSONDecodeError, ValueError) as e:
         logging.error(f"Error processing JSON file '{file_path}': {e}")
         return False
-
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        return False
 
 def get_connection() -> Optional[MongoClient]:
     """
@@ -140,14 +138,15 @@ def get_connection() -> Optional[MongoClient]:
         logging.warning("No active MongoDB connection. Use `connect_to_db` to establish a connection.")
         return None
 
-
 def generate_schema(db):
     """
     Generate a schema for the MongoDB database.
+
     Parameters:
-        db (Database): MongoDB database object.
+    db (Database): MongoDB database object.
+
     Returns:
-        dict: Schema containing collection names, fields, sample data, and statistics.
+    dict: Schema containing collection names, fields, sample data, and statistics.
     """
     schema = {}
     try:
@@ -155,36 +154,38 @@ def generate_schema(db):
             collection = db[collection_name]
             sample_data = collection.find_one() or {}
             total_documents = collection.count_documents({})
-            avg_document_size = collection.aggregate([
-                {"$group": {"_id": None, "avgSize": {"$avg": {"$bsonSize": "$$ROOT"}}}}])
-            avg_size = next(avg_document_size, {}).get("avgSize", 0)
+
+            # Get average document size
+            avg_document_size_cursor = collection.aggregate([
+                {"$group": {"_id": None, "avgSize": {"$avg": {"$bsonSize": "$$ROOT"}}}}
+            ])
+            avg_document_size = next(avg_document_size_cursor, {}).get("avgSize", 0) / 1024  # Convert bytes to KB
 
             # Collect indexes
             indexes = collection.index_information()
             index_info = [{"name": index, "fields": info["key"]} for index, info in indexes.items()]
 
-            # Identify nullable fields (those with None values in a sample document)
+            # Identify nullable fields
             nullable_fields = [field for field, value in sample_data.items() if value is None]
 
             schema[collection_name] = {
                 "fields": list(sample_data.keys()),
                 "sample": sample_data,
                 "total_documents": total_documents,
-                "avg_document_size": avg_size / 1024,  # Convert bytes to KB
+                "avg_document_size": avg_document_size,
                 "nullable_fields": nullable_fields,
                 "indexes": index_info,
             }
 
         logging.info("Schema generation successful.")
         return schema
+
     except Exception as e:
         logging.error(f"Error generating schema: {e}")
-        return schema
-
+        return {}
 
 # Workflow Example
 if __name__ == "__main__":
-    # MongoDB Example
     mongodb_details = {
         "type": "mongodb",
         "host": "localhost",
@@ -194,16 +195,21 @@ if __name__ == "__main__":
 
     if connect_to_db(mongodb_details):
         logging.info("MongoDB connection successful. Proceeding with further operations.")
+        db = get_connection()[mongodb_details["database"]]
+        schema = generate_schema(db)
+        if schema:
+            logging.info(f"Generated schema: {json.dumps(schema, indent=2)}")
+        else:
+            logging.error("Schema generation failed.")
     else:
         logging.error("Failed to connect to MongoDB.")
 
-    # JSON Example
     json_details = {
         "type": "json",
-        "file_path": "example.json"  # Ensure this file exists in your project directory
+        "file_path": "example.json"
     }
 
     if connect_to_db(json_details):
-        logging.info("JSON file processed successfully. Data is ready for use.")
+        logging.info("JSON file processed successfully.")
     else:
         logging.error("Failed to process the JSON file.")

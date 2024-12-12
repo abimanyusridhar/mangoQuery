@@ -232,10 +232,13 @@
 
         <label for="host">Host:</label>
         <input type="text" name="host" id="host" placeholder="e.g., localhost" disabled>
+
         <label for="port">Port:</label>
         <input type="number" name="port" id="port" placeholder="e.g., 27017" disabled>
+
         <label for="database">Database Name:</label>
         <input type="text" name="database" id="database" placeholder="e.g., my_database" disabled>
+
         <label for="db_file">Choose File:</label>
         <input type="file" name="db_file" id="db_file" accept=".json, .js" disabled>
 
@@ -267,14 +270,13 @@
             portInput.disabled = !isMongoDB;
             databaseInput.disabled = !isMongoDB;
             dbFileInput.disabled = isMongoDB;
-
             validateForm();
         }
 
         function validateForm() {
             let isValid = false;
             if (mongodbRadio.checked) {
-                isValid = hostInput.value && portInput.value && databaseInput.value;
+                isValid = hostInput.value.trim() && portInput.value.trim() && databaseInput.value.trim();
             } else if (jsonOrJsRadio.checked) {
                 isValid = dbFileInput.files.length > 0;
             }
