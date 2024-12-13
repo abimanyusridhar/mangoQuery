@@ -180,6 +180,16 @@
     <!-- Main Content -->
     <main class="container">
 
+        <!-- Database Overview -->
+        <section class="schema-view">
+            <h2>Database Overview</h2>
+            <ul>
+                <li><strong>Database Name:</strong> {{ db_details.name | default('Unknown') }}</li>
+                <li><strong>Total Collections:</strong> {{ db_details.collections_count | default('N/A') }}</li>
+                <li><strong>Size on Disk:</strong> {{ db_details.size_on_disk | default('N/A') }} bytes</li>
+            </ul>
+        </section>
+
         <!-- Schema Section -->
         <section class="schema-view">
             <h2>Database Schema</h2>
@@ -189,16 +199,20 @@
                 <div class="card">
                     <h3>{{ collection }}</h3>
                     <ul>
-                        <li><strong>Total Documents:</strong> {{ details.total_documents }}</li>
-                        <li><strong>Avg Document Size:</strong> {{ details.avg_document_size }} KB</li>
-                        <li><strong>Fields:</strong> {{ details.fields | join(', ') }}</li>
-                        <li><strong>Nullable Fields:</strong> {{ details.nullable_fields | join(', ') }}</li>
+                        <li><strong>Total Documents:</strong> {{ details.total_documents | default('0') }}</li>
+                        <li><strong>Avg Document Size:</strong> {{ details.avg_document_size | default('N/A') }} KB</li>
+                        <li><strong>Collection Size:</strong> {{ details.get('collection_size', 'N/A') }} bytes</li>
+                        <li><strong>Fields:</strong> {{ details.fields | join(', ') | default('None') }}</li>
                         <li><strong>Indexes:</strong>
+                            {% if details.indexes %}
                             <ul>
                                 {% for index in details.indexes %}
                                 <li>{{ index.name }}: {{ index.fields | join(', ') }}</li>
                                 {% endfor %}
                             </ul>
+                            {% else %}
+                            <em>No indexes defined</em>
+                            {% endif %}
                         </li>
                     </ul>
                 </div>

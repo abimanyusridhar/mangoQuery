@@ -36,8 +36,8 @@ def serialize_schema(schema):
             "total_documents": details["total_documents"],
             "avg_document_size": details["avg_document_size"],
             "fields": details["fields"],
-            "nullable_fields": details.get("nullable_fields", []),  # Added nullable fields
-            "indexes": details.get("indexes", []),  # Added indexes
+            "nullable_fields": details.get("nullable_fields", []),
+            "indexes": details.get("indexes", []),
         }
     return serialized_schema
 
@@ -47,43 +47,43 @@ def generate_schema(data):
     try:
         if isinstance(data, dict):  # JSON data
             for collection_name, documents in data.items():
-                if isinstance(documents, list) and documents:
+                if not isinstance(documents, list):
+                    raise ValueError(f"Collection '{collection_name}' should be a list of documents.")
+                if documents:
                     first_doc = documents[0]
                     schema[collection_name] = {
                         "fields": list(first_doc.keys()),
                         "field_types": {key: type(value).__name__ for key, value in first_doc.items()},
-                        "sample": first_doc,
                         "total_documents": len(documents),
-                        "avg_document_size": sum(len(str(doc)) for doc in documents) / len(documents) if documents else 0,
+                        "avg_document_size": sum(len(json.dumps(doc)) for doc in documents) / len(documents),
                         "nullable_fields": [key for key, value in first_doc.items() if value is None],
                         "indexes": []
                     }
-        elif hasattr(data, 'list_collection_names'):  # MongoDB data (database object)
+        elif hasattr(data, 'list_collection_names'):  # MongoDB database object
             for collection_name in data.list_collection_names():
                 collection = data[collection_name]
                 sample_data = collection.find_one() or {}
                 total_documents = collection.count_documents({})
-                avg_size = collection.aggregate([{"$group": {"_id": None, "avgSize": {"$avg": {"$bsonSize": "$$ROOT"}}}}])
-                avg_document_size = next(avg_size, {}).get("avgSize", 0)
+                avg_doc_size_cursor = collection.aggregate([
+                    {"$group": {"_id": None, "avgSize": {"$avg": {"$bsonSize": "$$ROOT"}}}}
+                ])
+                avg_document_size = next(avg_doc_size_cursor, {}).get("avgSize", 0) / 1024
 
                 indexes = collection.index_information()
                 schema[collection_name] = {
                     "fields": list(sample_data.keys()),
-                    "field_types": {key: type(value).__name__ for key, value in sample_data.items()},
-                    "sample": sample_data,
                     "total_documents": total_documents,
-                    "avg_document_size": avg_document_size / 1024,  # Convert bytes to KB
+                    "avg_document_size": avg_document_size,
                     "nullable_fields": [key for key, value in sample_data.items() if value is None],
-                    "indexes": [{"name": index_name, "fields": index_info["key"]} for index_name, index_info in indexes.items()]
+                    "indexes": [{"name": k, "fields": v['key']} for k, v in indexes.items()]
                 }
         else:
-            raise ValueError("Unsupported data type for schema generation.")
-        
-        logging.info("Schema generation successful.")
+            raise ValueError("Unsupported data type provided for schema generation.")
+
         return schema
     except Exception as e:
         logging.error(f"Error generating schema: {e}")
-        raise RuntimeError(f"Error generating schema: {e}")
+        raise
 
 def generate_mongo_query(natural_language_query, schema):
     """Convert natural language query into a MongoDB query."""
@@ -167,23 +167,53 @@ def connect_database():
         return redirect(url_for('select_db'))
 
     try:
+        db_details = {}  # Collect database details for display
         if selected_db['type'] == 'mongodb':
-            client = pymongo.MongoClient(selected_db['host'], selected_db['port'])
+            logging.info("Connecting to MongoDB...")
+            client = pymongo.MongoClient(selected_db['host'], selected_db['port'], serverSelectionTimeoutMS=5000)
             db = client[selected_db['database']]
+            db.command("ping")  # Test MongoDB connection
+            db_details = {
+                "name": selected_db['database'],
+                "host": selected_db['host'],
+                "port": selected_db['port'],
+            }
             schema = generate_schema(db)
         elif selected_db['type'] == 'json':
             file_path = selected_db.get('file_path')
+            if not file_path or not os.path.exists(file_path):
+                raise FileNotFoundError("JSON file not found.")
             with open(file_path, 'r') as file:
                 data = json.load(file)
                 schema = generate_schema(data)
+            db_details = {
+                "name": os.path.basename(file_path),
+                "type": "JSON File",
+            }
         else:
             raise ValueError("Unsupported database type.")
-        session['schema'] = serialize_schema(schema)
-        return render_template('schema.html', collections=session['schema'])
-    except Exception as e:
-        logging.error(f"Error connecting to database: {e}")
-        flash(f"Error: {e}", 'danger')
-        return redirect(url_for('select_db'))
+
+        if schema:
+            session['schema'] = serialize_schema(schema)
+            logging.info("Schema generation successful.")
+            return render_template('schema.html', collections=session['schema'], db_details=db_details)
+        else:
+            raise RuntimeError("Failed to generate schema.")
+
+    except pymongo.errors.ServerSelectionTimeoutError as conn_error:
+        logging.error(f"MongoDB connection error: {conn_error}")
+        flash("Failed to connect to MongoDB. Please check your connection details.", 'danger')
+    except FileNotFoundError as fnf_error:
+        logging.error(f"File error: {fnf_error}")
+        flash(f"File error: {fnf_error}", 'danger')
+    except ValueError as val_error:
+        logging.error(f"Value error: {val_error}")
+        flash(f"Error: {val_error}", 'danger')
+    except Exception as general_error:
+        logging.error(f"Unexpected error: {general_error}")
+        flash(f"Unexpected error: {general_error}", 'danger')
+
+    return redirect(url_for('select_db'))
 
 @app.route('/nlp_query', methods=['GET', 'POST'])
 def nlp_query():

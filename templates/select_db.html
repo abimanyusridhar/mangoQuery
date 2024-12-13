@@ -265,18 +265,27 @@
         const submitButton = document.getElementById('submitButton');
         const mongodbError = document.getElementById('mongodbError');
         const jsonError = document.getElementById('jsonError');
-
+    
         function toggleInputs() {
             const isMongoDB = mongodbRadio.checked;
+    
+            // Toggle input fields for MongoDB
             hostInput.disabled = !isMongoDB;
             portInput.disabled = !isMongoDB;
             databaseInput.disabled = !isMongoDB;
+    
+            // Toggle file input for JSON/JS
             dbFileInput.disabled = isMongoDB;
+    
+            // Clear error messages and validate the form
+            mongodbError.style.display = 'none';
+            jsonError.style.display = 'none';
             validateForm();
         }
-
+    
         function validateForm() {
             let isValid = false;
+    
             if (mongodbRadio.checked) {
                 isValid = hostInput.value.trim() && portInput.value.trim() && databaseInput.value.trim();
                 mongodbError.style.display = isValid ? 'none' : 'block';
@@ -284,15 +293,20 @@
                 isValid = dbFileInput.files.length > 0;
                 jsonError.style.display = isValid ? 'none' : 'block';
             }
+    
+            // Enable/disable submit button based on validation
             submitButton.disabled = !isValid;
         }
-
+    
+        // Event listeners
         mongodbRadio.addEventListener('change', toggleInputs);
         jsonOrJsRadio.addEventListener('change', toggleInputs);
         hostInput.addEventListener('input', validateForm);
         portInput.addEventListener('input', validateForm);
         databaseInput.addEventListener('input', validateForm);
         dbFileInput.addEventListener('change', validateForm);
+    
+        // Initial call to set input states based on preselected option
+        toggleInputs();
     </script>
-</body>
-</html>
+    
