@@ -103,7 +103,11 @@ def generate_query_from_pattern(nl_query: str, schema: Dict[str, Any]) -> Option
 def generate_query_with_nlp(nl_query: str, schema: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Generate query using the NLP model."""
     try:
-        schema_json = json.dumps(schema, indent=2) if schema else "No schema available."
+        if not schema:
+            logging.error("No schema available for NLP query generation.")
+            raise ValueError("Schema is required for NLP query generation.")
+        
+        schema_json = json.dumps(schema, indent=2)
         prompt = f"Schema:\n{schema_json}\n\nQuery: {nl_query}\n\nMongoDB Query:"
         result = nlp_model(prompt, max_length=200, num_return_sequences=1)
         return json.loads(result[0]["generated_text"])

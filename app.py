@@ -32,18 +32,12 @@ def serialize_schema(schema):
     """Serialize schema and handle MongoDB-specific types."""
     serialized_schema = {}
     for collection, details in schema.items():
-        sample = details.get("sample", {})
         serialized_schema[collection] = {
+            "total_documents": details["total_documents"],
+            "avg_document_size": details["avg_document_size"],
             "fields": details["fields"],
-            "field_types": details.get("field_types", {}),
-            "sample": {
-                key: (str(value) if isinstance(value, (ObjectId, DBRef)) else value)
-                for key, value in sample.items()
-            },
-            "total_documents": details.get("total_documents", 0),
-            "avg_document_size": details.get("avg_document_size", 0),
-            "nullable_fields": details.get("nullable_fields", []),
-            "indexes": details.get("indexes", []),
+            "nullable_fields": details.get("nullable_fields", []),  # Added nullable fields
+            "indexes": details.get("indexes", []),  # Added indexes
         }
     return serialized_schema
 
@@ -64,7 +58,7 @@ def generate_schema(data):
                         "nullable_fields": [key for key, value in first_doc.items() if value is None],
                         "indexes": []
                     }
-        else:  # MongoDB data
+        elif hasattr(data, 'list_collection_names'):  # MongoDB data (database object)
             for collection_name in data.list_collection_names():
                 collection = data[collection_name]
                 sample_data = collection.find_one() or {}
@@ -82,6 +76,9 @@ def generate_schema(data):
                     "nullable_fields": [key for key, value in sample_data.items() if value is None],
                     "indexes": [{"name": index_name, "fields": index_info["key"]} for index_name, index_info in indexes.items()]
                 }
+        else:
+            raise ValueError("Unsupported data type for schema generation.")
+        
         logging.info("Schema generation successful.")
         return schema
     except Exception as e:
@@ -198,10 +195,13 @@ def nlp_query():
             return redirect(url_for('nlp_query'))
         try:
             mongo_query = generate_mongo_query(nl_query, session.get('schema', {}))
-            result, error = execute_query_with_mongo_query(mongo_query)
-            if error:
-                flash(error, 'danger')
-            return render_template('result.html', result=result)
+            if mongo_query:
+                result, error = execute_query_with_mongo_query(mongo_query)
+                if error:
+                    flash(error, 'danger')
+                return render_template('result.html', result=result)
+            else:
+                flash('Error generating MongoDB query.', 'danger')
         except Exception as e:
             flash(f"Error processing query: {e}", 'danger')
     return render_template('nlp_query.html')

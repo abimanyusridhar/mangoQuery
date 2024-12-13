@@ -9,8 +9,10 @@ from bson import ObjectId, DBRef
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
+# Global MongoDB client
 client = None
 
+# MongoDB connection defaults
 DEFAULT_MONGODB_HOST = "localhost"
 DEFAULT_MONGODB_PORT = 27017
 
@@ -19,15 +21,20 @@ def connect_to_db(db_details: dict):
     """Connect to MongoDB database"""
     global client
     try:
+        # Validate the database type
         if db_details.get("type") != "mongodb":
             raise ValueError("Unsupported database type. Only MongoDB is supported.")
         
+        # Extract connection details
         host = db_details.get("host", DEFAULT_MONGODB_HOST)
         port = db_details.get("port", DEFAULT_MONGODB_PORT)
+        
+        # Establish the MongoDB connection
         client = MongoClient(host=host, port=port)
-        client.admin.command("ping")
+        client.admin.command("ping")  # Ping to check if the server is alive
         logging.info(f"Connected to MongoDB server at {host}:{port}")
 
+        # Get the database name and connect to it
         db_name = db_details.get("database")
         if not db_name:
             raise ValueError("Database name is required.")
@@ -43,21 +50,29 @@ def connect_to_db(db_details: dict):
 def generate_schema(db):
     """Generate schema with additional insights for visualization"""
     schema = {}
+    db_details = {}
     try:
+        # Collecting database-level insights
+        db_stats = db.command("dbstats")
+        db_details['name'] = db.name
+        db_details['collections_count'] = len(db.list_collection_names())
+        db_details['size_on_disk'] = db_stats.get('dataSize', 0)  # Database size on disk in bytes
+
+        # Loop through each collection in the database
         for collection_name in db.list_collection_names():
             collection = db[collection_name]
-            sample_data = collection.find_one() or {}
+            sample_data = collection.find_one() or {}  # Sample document from the collection
             total_documents = collection.count_documents({})
-            avg_document_size = collection.aggregate([
+            avg_document_size = collection.aggregate([  # Calculate average document size
                 {"$group": {"_id": None, "avgSize": {"$avg": {"$bsonSize": "$$ROOT"}}}}
             ])
             avg_size = next(avg_document_size, {}).get("avgSize", 0)
 
-            # Extract field-level insights
+            # Extract field-level insights for each field in the collection
             field_details = {}
             for field, value in sample_data.items():
-                field_type = type(value).__name__
-                distinct_values = collection.distinct(field)
+                field_type = type(value).__name__  # Get the field type
+                distinct_values = collection.distinct(field)  # Get distinct values for the field
                 field_details[field] = {
                     "type": field_type,
                     "distinct_values_count": len(distinct_values),
@@ -69,21 +84,23 @@ def generate_schema(db):
                 "total_documents": total_documents,
                 "avg_document_size": avg_size / 1024,  # Convert bytes to KB
             }
+
         logging.info("Schema generation successful.")
-        return schema
+        return schema, db_details
     except Exception as e:
         logging.error(f"Error generating schema: {e}")
-        return schema
+        return schema, db_details
 
 
 def extract_relationships(schema: dict):
     """Extract relationships between collections based on schema details."""
     relationships = defaultdict(list)
     try:
+        # Check for references between collections
         for collection_name, details in schema.items():
             for field, value in details.get("field_details", {}).items():
                 if isinstance(value, dict) and "$ref" in value and "$id" in value:
-                    ref_collection = value.get("$ref")
+                    ref_collection = value.get("$ref")  # Extract the referenced collection
                     relationships[ref_collection].append(
                         {
                             "from_collection": collection_name,
@@ -97,7 +114,7 @@ def extract_relationships(schema: dict):
     return dict(relationships)
 
 
-def visualize_schema(schema: dict, relationships: dict, output_file=None):
+def visualize_schema(schema: dict, relationships: dict, db_details: dict, output_file=None):
     """Visualize the MongoDB schema and relationships using PyVis"""
     if not output_file:
         output_file = f"schema_visualization_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
@@ -134,6 +151,16 @@ def visualize_schema(schema: dict, relationships: dict, output_file=None):
                     color="#e74c3c",
                 )
 
+        # Add database-level insights as a summary node
+        db_info_node = "Database Info"
+        db_info_label = (
+            f"{db_details['name']}\nCollections: {db_details['collections_count']}\n"
+            f"Size on Disk: {db_details['size_on_disk']} bytes"
+        )
+        net.add_node(db_info_node, label=db_info_label, shape="box", color="#2ecc71")
+        net.add_edge(db_info_node, list(schema.keys())[0], label="Contains", color="#2ecc71")
+
+        # Display the network in an HTML file
         net.show(output_file)
         logging.info(f"Schema visualization saved as '{output_file}'.")
     except Exception as e:
@@ -146,14 +173,15 @@ if __name__ == "__main__":
         "type": "mongodb",
         "host": DEFAULT_MONGODB_HOST,
         "port": DEFAULT_MONGODB_PORT,
-        "database": "test_db",
+        "database": "test_db",  # Specify the database name to connect to
     }
-    db = connect_to_db(db_details)
+    db = connect_to_db(db_details)  # Connect to the database
+
     if db:
-        schema = generate_schema(db)
+        schema, db_details = generate_schema(db)  # Generate the schema and collect DB-level details
         if schema:
-            relationships = extract_relationships(schema)
-            visualize_schema(schema, relationships)
+            relationships = extract_relationships(schema)  # Extract relationships
+            visualize_schema(schema, relationships, db_details)  # Visualize schema
         else:
             logging.error("Failed to generate schema.")
     else:

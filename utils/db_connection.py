@@ -138,7 +138,7 @@ def get_connection() -> Optional[MongoClient]:
         logging.warning("No active MongoDB connection. Use `connect_to_db` to establish a connection.")
         return None
 
-def generate_schema(db):
+def generate_schema(db) -> Dict[str, Any]:
     """
     Generate a schema for the MongoDB database.
 
@@ -156,9 +156,9 @@ def generate_schema(db):
             total_documents = collection.count_documents({})
 
             # Get average document size
-            avg_document_size_cursor = collection.aggregate([
-                {"$group": {"_id": None, "avgSize": {"$avg": {"$bsonSize": "$$ROOT"}}}}
-            ])
+            avg_document_size_cursor = collection.aggregate([{
+                "$group": {"_id": None, "avgSize": {"$avg": {"$bsonSize": "$$ROOT"}}}
+            }])
             avg_document_size = next(avg_document_size_cursor, {}).get("avgSize", 0) / 1024  # Convert bytes to KB
 
             # Collect indexes
@@ -186,6 +186,7 @@ def generate_schema(db):
 
 # Workflow Example
 if __name__ == "__main__":
+    # MongoDB connection example
     mongodb_details = {
         "type": "mongodb",
         "host": "localhost",
@@ -204,6 +205,7 @@ if __name__ == "__main__":
     else:
         logging.error("Failed to connect to MongoDB.")
 
+    # JSON file processing example
     json_details = {
         "type": "json",
         "file_path": "example.json"

@@ -231,16 +231,16 @@
         </div>
 
         <label for="host">Host:</label>
-        <input type="text" name="host" id="host" placeholder="e.g., localhost" disabled>
+        <input type="text" name="host" id="host" placeholder="e.g., localhost" aria-describedby="hostTooltip" disabled>
 
         <label for="port">Port:</label>
-        <input type="number" name="port" id="port" placeholder="e.g., 27017" disabled>
+        <input type="number" name="port" id="port" placeholder="e.g., 27017" aria-describedby="portTooltip" disabled>
 
         <label for="database">Database Name:</label>
-        <input type="text" name="database" id="database" placeholder="e.g., my_database" disabled>
+        <input type="text" name="database" id="database" placeholder="e.g., my_database" aria-describedby="databaseTooltip" disabled>
 
         <label for="db_file">Choose File:</label>
-        <input type="file" name="db_file" id="db_file" accept=".json, .js" disabled>
+        <input type="file" name="db_file" id="db_file" accept=".json, .js" aria-describedby="fileTooltip" disabled>
 
         <div class="error-message" id="mongodbError">Please fill out all MongoDB fields.</div>
         <div class="error-message" id="jsonError">Please upload a valid JSON or JS file.</div>
@@ -263,6 +263,8 @@
         const databaseInput = document.getElementById('database');
         const dbFileInput = document.getElementById('db_file');
         const submitButton = document.getElementById('submitButton');
+        const mongodbError = document.getElementById('mongodbError');
+        const jsonError = document.getElementById('jsonError');
 
         function toggleInputs() {
             const isMongoDB = mongodbRadio.checked;
@@ -277,8 +279,10 @@
             let isValid = false;
             if (mongodbRadio.checked) {
                 isValid = hostInput.value.trim() && portInput.value.trim() && databaseInput.value.trim();
+                mongodbError.style.display = isValid ? 'none' : 'block';
             } else if (jsonOrJsRadio.checked) {
                 isValid = dbFileInput.files.length > 0;
+                jsonError.style.display = isValid ? 'none' : 'block';
             }
             submitButton.disabled = !isValid;
         }
