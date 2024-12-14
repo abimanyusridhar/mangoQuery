@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register | DataSpeak</title>
+    <style>
+        /* General Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(120deg, #fbe9e7, #ffffff);
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 400px;
+            width: 100%;
+            background: #ffffff;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 2rem;
+            color: #d84315;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            font-size: 0.9rem;
+            color: #555;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        input:focus {
+            border-color: #d84315;
+            outline: none;
+            box-shadow: 0 0 5px rgba(216, 67, 21, 0.5);
+        }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #fff;
+            background-color: #d84315;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #bf360c;
+        }
+
+        .links {
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .links a {
+            text-decoration: none;
+            color: #d84315;
+            font-size: 0.9rem;
+        }
+
+        .links a:hover {
+            text-decoration: underline;
+        }
+
+        .alert {
+            padding: 1rem;
+            border: 1px solid transparent;
+            border-radius: 5px;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .container {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="container">
+        <h2>Register</h2>
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=True) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}" role="alert">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <!-- Registration Form -->
+        <form action="{{ url_for('register') }}" method="POST" novalidate>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input 
+                    id="email" 
+                    type="email" 
+                    name="email" 
+                    placeholder="Enter your email" 
+                    aria-label="Email" 
+                    aria-describedby="email-hint"
+                    pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" 
+                    required>
+                <p id="email-hint" class="sr-only">Please enter a valid email address.</p>
+            </div>
+            
+            <div class="form-group password-wrapper">
+                <label for="password">Password</label>
+                <input 
+                    id="password" 
+                    type="password" 
+                    name="password" 
+                    placeholder="Enter your password" 
+                    aria-label="Password" 
+                    required>
+                <span class="toggle-password" onclick="togglePassword('password')">Show</span>
+            </div>
+            
+            <div class="form-group password-wrapper">
+                <label for="confirm_password">Confirm Password</label>
+                <input 
+                    id="confirm_password" 
+                    type="password" 
+                    name="confirm_password" 
+                    placeholder="Confirm your password" 
+                    aria-label="Confirm Password" 
+                    required>
+                <span class="toggle-password" onclick="togglePassword('confirm_password')">Show</span>
+            </div>
+
+            <button type="submit" aria-label="Register">Register</button>
+        </form>
+
+        <div class="links">
+            <a href="{{ url_for('login') }}">Back to Login</a>
+        </div>
+    </main>
+
+    <script>
+        // Toggle password visibility
+        function togglePassword(id) {
+            const passwordField = document.getElementById(id);
+            const toggleBtn = passwordField.nextElementSibling;
+
+            if (passwordField.type === "password") {
+                passwordField.type = "text";
+                toggleBtn.textContent = "Hide";
+            } else {
+                passwordField.type = "password";
+                toggleBtn.textContent = "Show";
+            }
+        }
+    </script>
+</body>
+</html>

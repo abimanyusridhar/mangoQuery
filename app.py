@@ -6,10 +6,25 @@ import pymongo
 from bson import ObjectId, DBRef
 from werkzeug.utils import secure_filename
 import logging
+from werkzeug.security import check_password_hash, generate_password_hash
 
 # Initialize Flask application
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "your_secret_key")
+
+# MongoDB setup
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+DATABASE_NAME = os.getenv("DATABASE_NAME", "my_database")
+USER_COLLECTION_NAME = os.getenv("USER_COLLECTION_NAME", "users")
+
+try:
+    mongo_client = pymongo.MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+    db = mongo_client[DATABASE_NAME]
+    user_collection = db[USER_COLLECTION_NAME]
+    logging.info("Connected to MongoDB and initialized user collection.")
+except Exception as e:
+    logging.error(f"Failed to connect to MongoDB: {e}")
+    user_collection = None
 
 # Logging setup
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -124,6 +139,75 @@ def index():
     """Render homepage."""
     return render_template('index.html')
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Login page and logic."""
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+
+        user = user_collection.find_one({"email": email})
+
+        if user and check_password_hash(user['password'], password):
+            session['user_email'] = email
+            flash('Login successful!', 'success')
+            return redirect(url_for('select_db'))
+        else:
+            flash('Invalid email or password.', 'danger')
+
+    return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    """Register page and logic."""
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+
+        if not email or not password or not confirm_password:
+            flash('All fields are required.', 'danger')
+            return redirect(url_for('register'))
+
+        if password != confirm_password:
+            flash('Passwords do not match.', 'danger')
+            return redirect(url_for('register'))
+
+        if user_collection.find_one({"email": email}):
+            flash('Email is already registered.', 'danger')
+            return redirect(url_for('register'))
+
+        hashed_password = generate_password_hash(password)
+
+        user_collection.insert_one({"email": email, "password": hashed_password})
+        flash('Registration successful! You can now login.', 'success')
+        return redirect(url_for('login'))
+
+    return render_template('register.html')
+
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    """Forgot password page and logic."""
+    if request.method == 'POST':
+        email = request.form.get('email')
+
+        user = user_collection.find_one({"email": email})
+        if not user:
+            flash('If the email exists, a reset link has been sent.', 'info')
+            return redirect(url_for('forgot_password'))
+
+        flash('A password reset link has been sent to your email.', 'success')
+        return redirect(url_for('login'))
+
+    return render_template('forgot_password.html')
+
+@app.route('/logout')
+def logout():
+    """Logout the user."""
+    session.pop('user_email', None)
+    flash('You have been logged out.', 'success')
+    return redirect(url_for('login'))
+
 @app.route('/select_db', methods=['GET', 'POST'])
 def select_db():
     """Handle database selection or file upload."""
@@ -167,12 +251,11 @@ def connect_database():
         return redirect(url_for('select_db'))
 
     try:
-        db_details = {}  # Collect database details for display
+        db_details = {}
         if selected_db['type'] == 'mongodb':
-            logging.info("Connecting to MongoDB...")
             client = pymongo.MongoClient(selected_db['host'], selected_db['port'], serverSelectionTimeoutMS=5000)
             db = client[selected_db['database']]
-            db.command("ping")  # Test MongoDB connection
+            db.command("ping")
             db_details = {
                 "name": selected_db['database'],
                 "host": selected_db['host'],
@@ -195,7 +278,6 @@ def connect_database():
 
         if schema:
             session['schema'] = serialize_schema(schema)
-            logging.info("Schema generation successful.")
             return render_template('schema.html', collections=session['schema'], db_details=db_details)
         else:
             raise RuntimeError("Failed to generate schema.")

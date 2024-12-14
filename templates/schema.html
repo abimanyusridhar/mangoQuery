@@ -202,6 +202,10 @@
                         <li><strong>Total Documents:</strong> {{ details.total_documents | default('0') }}</li>
                         <li><strong>Avg Document Size:</strong> {{ details.avg_document_size | default('N/A') }} KB</li>
                         <li><strong>Collection Size:</strong> {{ details.get('collection_size', 'N/A') }} bytes</li>
+                        {% if not collections %}
+                       <p>Error: No valid collections were detected. Please verify the database structure.</p>
+                          {% endif %}
+
                         <li><strong>Fields:</strong> {{ details.fields | join(', ') | default('None') }}</li>
                         <li><strong>Indexes:</strong>
                             {% if details.indexes %}
